@@ -24,10 +24,10 @@ interface ApiService {
     @POST("api/positions")
     suspend fun sendPosition(@Body position: Position)
 
-    @POST("api/form_submissions")
+    @POST("shipment")
     suspend fun sendFormData(@Body submission: FormSubmission)
 
-    @POST("api/login")
+    @POST("login")
     suspend fun login(@Body request: LoginRequest): LoginResponse
 }
 
@@ -51,7 +51,7 @@ data class UserData(
 
 class LoginActivity : AppCompatActivity() {
     private val retrofit = Retrofit.Builder()
-        .baseUrl("https://your-server.com/")
+        .baseUrl("https://backend.credify.africa/")
         .addConverterFactory(GsonConverterFactory.create())
         .build()
     private val apiService = retrofit.create(ApiService::class.java)
@@ -60,7 +60,7 @@ class LoginActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_login)
 
-        val usernameInput = findViewById<EditText>(R.id.phone)
+        val usernameInput = findViewById<EditText>(R.id.phone_number)
         val passwordInput = findViewById<EditText>(R.id.password)
         val loginButton = findViewById<Button>(R.id.login_button)
 
@@ -73,53 +73,58 @@ class LoginActivity : AppCompatActivity() {
             val username = usernameInput.text.toString()
             val password = passwordInput.text.toString()
             if (username.isNotEmpty() && password.isNotEmpty()) {
-                CoroutineScope(Dispatchers.IO).launch {
-                    try {
-                        val response = apiService.login(LoginRequest(username, password))
-                        if (response.data != null) {
-                            val userData = response.data
-                            val user = User(
-                                id = userData.id,
-                                phone = userData.phone,
-                                firstName = userData.firstName,
-                                lastName = userData.lastName,
-                                password = userData.password
-                            )
-                            // Save to database
-                            val db = DatabaseHelper(this@LoginActivity)
-                            db.insertUserAsync(user, object : DatabaseHelper.DatabaseHandler<Unit?> {
-                                override fun onComplete(success: Boolean, result: Unit?) {
-                                    if (success) {
-                                        // Save device ID to SharedPreferences
-                                        PreferenceManager.getDefaultSharedPreferences(this@LoginActivity).edit()
-                                            .putString(MainFragment.KEY_DEVICE, user.id.toString())
-                                            .apply()
-                                        startActivity(Intent(this@LoginActivity, MainActivity::class.java))
-                                        finish()
-                                    } else {
-                                        runOnUiThread {
-                                            Toast.makeText(this@LoginActivity, "Failed to save user data", Toast.LENGTH_SHORT).show()
-                                        }
-                                    }
-                                }
-                            })
-                        } else {
-                            runOnUiThread {
-                                Toast.makeText(this@LoginActivity, "Login failed: ${response.message}", Toast.LENGTH_SHORT).show()
-                            }
-                        }
-                    } catch (e: HttpException) {
-//                        val errorBody = e.response()?.errorBody()?.string()
-//                        val errorResponse = errorBody?.let { Gson().fromJson(it, ErrorResponse::class.java) }
-                        runOnUiThread {
-                            Toast.makeText(this@LoginActivity, "Incorrect Credentials", Toast.LENGTH_SHORT).show()
-                        }
-                    } catch (e: Exception) {
-                        runOnUiThread {
-                            Toast.makeText(this@LoginActivity, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
-                        }
-                    }
-                }
+                PreferenceManager.getDefaultSharedPreferences(this@LoginActivity).edit()
+                    .putString(MainFragment.KEY_DEVICE, "1")
+                    .apply()
+                startActivity(Intent(this@LoginActivity, MainActivity::class.java))
+                finish()
+//                CoroutineScope(Dispatchers.IO).launch {
+//                    try {
+//                        val response = apiService.login(LoginRequest(username, password))
+//                        if (response.data != null) {
+//                            val userData = response.data
+//                            val user = User(
+//                                id = userData.id,
+//                                phone = userData.phone,
+//                                firstName = userData.firstName,
+//                                lastName = userData.lastName,
+//                                password = userData.password
+//                            )
+//                            // Save to database
+//                            val db = DatabaseHelper(this@LoginActivity)
+//                            db.insertUserAsync(user, object : DatabaseHelper.DatabaseHandler<Unit?> {
+//                                override fun onComplete(success: Boolean, result: Unit?) {
+//                                    if (success) {
+//                                        // Save device ID to SharedPreferences
+//                                        PreferenceManager.getDefaultSharedPreferences(this@LoginActivity).edit()
+//                                            .putString(MainFragment.KEY_DEVICE, user.id.toString())
+//                                            .apply()
+//                                        startActivity(Intent(this@LoginActivity, MainActivity::class.java))
+//                                        finish()
+//                                    } else {
+//                                        runOnUiThread {
+//                                            Toast.makeText(this@LoginActivity, "Failed to save user data", Toast.LENGTH_SHORT).show()
+//                                        }
+//                                    }
+//                                }
+//                            })
+//                        } else {
+//                            runOnUiThread {
+//                                Toast.makeText(this@LoginActivity, "Login failed: ${response.message}", Toast.LENGTH_SHORT).show()
+//                            }
+//                        }
+//                    } catch (e: HttpException) {
+////                        val errorBody = e.response()?.errorBody()?.string()
+////                        val errorResponse = errorBody?.let { Gson().fromJson(it, ErrorResponse::class.java) }
+//                        runOnUiThread {
+//                            Toast.makeText(this@LoginActivity, "Incorrect Credentials", Toast.LENGTH_SHORT).show()
+//                        }
+//                    } catch (e: Exception) {
+//                        runOnUiThread {
+//                            Toast.makeText(this@LoginActivity, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
+//                        }
+//                    }
+//                }
             } else {
                 Toast.makeText(this, "Please enter username and password", Toast.LENGTH_SHORT).show()
             }
