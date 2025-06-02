@@ -81,6 +81,9 @@ dependencies {
     googleImplementation 'com.google.firebase:firebase-crashlytics'
     googleImplementation 'com.google.android.gms:play-services-location:21.3.0'
     googleImplementation 'com.google.android.play:review:2.0.2'
+    implementation 'com.squareup.retrofit2:converter-gson:2.9.0'
+    implementation 'androidx.navigation:navigation-fragment-ktx:2.8.0'
+    implementation 'androidx.navigation:navigation-ui-ktx:2.8.0'
 }
 
 tasks.register('copyFirebaseConfig', Copy) {

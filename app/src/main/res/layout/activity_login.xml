@@ -1,26 +1,84 @@
+<?xml version="1.0" encoding="utf-8"?>
 <LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
     android:padding="16dp"
     android:gravity="center"
-    xmlns:android="http://schemas.android.com/apk/res/android">
+    android:background="#F5F5F5">
+
+    <ImageView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:src="@drawable/ic_credify_logo"
+        android:contentDescription="Credify Logo"
+        android:layout_marginBottom="16dp"
+        />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Credify Driver"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        android:layout_marginTop="16dp"
+        android:textColor="#333333" />
+
     <EditText
-        android:id="@+id/phone"
+        android:id="@+id/phone_number"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:hint="Phone Number"
-        android:layout_marginBottom="16dp" />
+        android:inputType="phone"
+        android:layout_marginTop="24dp"
+        android:textColorHint="#757575"
+        android:background="@drawable/edittext_background"
+        android:padding="12dp" />
+
     <EditText
         android:id="@+id/password"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:hint="Password"
         android:inputType="textPassword"
-        android:layout_marginBottom="16dp" />
+        android:layout_marginTop="16dp"
+        android:textColorHint="#757575"
+        android:background="@drawable/edittext_background"
+        android:padding="12dp"
+        android:drawableEnd="@android:drawable/ic_menu_view"
+        android:drawablePadding="8dp" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Forgot password?"
+        android:textColor="#1E88E5"
+        android:layout_marginTop="8dp"
+        android:layout_gravity="end" />
+
     <Button
         android:id="@+id/login_button"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Login" />
+        android:text="Log in"
+        android:backgroundTint="#1E88E5"
+        android:textColor="#FFFFFF"
+        android:layout_marginTop="24dp"
+        android:padding="12dp" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Don't have an account? "
+        android:layout_marginTop="16dp"
+        android:textColor="#757575" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Sign up"
+        android:textColor="#1E88E5"
+        android:layout_marginStart="4dp" />
+
 </LinearLayout>

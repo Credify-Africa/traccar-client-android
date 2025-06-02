@@ -26,7 +26,7 @@ import android.os.AsyncTask
 import java.sql.Date
 
 data class FormSubmission(
-    val id: Long = 0,
+    val id: String,
     val containerId: String,
     val comment: String,
     val deviceId: String,
@@ -212,7 +212,7 @@ class DatabaseHelper(context: Context?) : SQLiteOpenHelper(context, DATABASE_NAM
             while (cursor.moveToNext()) {
                 submissions.add(
                     FormSubmission(
-                        id = cursor.getLong(cursor.getColumnIndex("id")),
+                        id = cursor.getLong(cursor.getColumnIndex("id")).toString(),
                         containerId = cursor.getString(cursor.getColumnIndex("containerId")),
                         comment = cursor.getString(cursor.getColumnIndex("comment")),
                         deviceId = cursor.getString(cursor.getColumnIndex("deviceId")),
