@@ -4,5 +4,9 @@
     <color name="primary">#2e7d32</color>
     <color name="primary_dark">#005005</color>
     <color name="accent">#1a237e</color>
+    <color name="bottom_nav_item_color">#1E88E5</color>
+    <color name="colorPrimary">#1E88E5</color>
+    <color name="colorPrimaryDark">#1565C0</color>
+    <color name="colorAccent">#FF5722</color>
 
 </resources>
