@@ -36,18 +36,18 @@
         android:background="@drawable/edittext_background"
         android:padding="12dp" />
 
-    <EditText
-        android:id="@+id/password"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:hint="Password"
-        android:inputType="textPassword"
-        android:layout_marginTop="16dp"
-        android:textColorHint="#757575"
-        android:background="@drawable/edittext_background"
-        android:padding="12dp"
-        android:drawableEnd="@android:drawable/ic_menu_view"
-        android:drawablePadding="8dp" />
+<!--    <EditText-->
+<!--        android:id="@+id/password"-->
+<!--        android:layout_width="match_parent"-->
+<!--        android:layout_height="wrap_content"-->
+<!--        android:hint="Password"-->
+<!--        android:inputType="textPassword"-->
+<!--        android:layout_marginTop="16dp"-->
+<!--        android:textColorHint="#757575"-->
+<!--        android:background="@drawable/edittext_background"-->
+<!--        android:padding="12dp"-->
+<!--        android:drawableEnd="@android:drawable/ic_menu_view"-->
+<!--        android:drawablePadding="8dp" />-->
 
     <TextView
         android:layout_width="wrap_content"

@@ -2,131 +2,110 @@ package org.traccar.client
 
 import android.content.Intent
 import android.os.Bundle
+import android.os.Parcelable
+import android.provider.Settings
+import android.util.Log
 import android.widget.Button
 import android.widget.EditText
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.content.ContextCompat
 import androidx.core.app.ActivityCompat
-import androidx.preference.PreferenceManager
-import com.google.firebase.crashlytics.buildtools.reloc.org.apache.http.HttpException
-import com.google.gson.Gson
-import com.google.gson.annotations.SerializedName
+import androidx.core.content.ContextCompat
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import retrofit2.Retrofit
-import retrofit2.converter.gson.GsonConverterFactory
-import retrofit2.http.Body
-import retrofit2.http.POST
-
-interface ApiService {
-    @POST("api/positions")
-    suspend fun sendPosition(@Body position: Position)
-
-    @POST("shipment")
-    suspend fun sendFormData(@Body submission: FormSubmission)
-
-    @POST("login")
-    suspend fun login(@Body request: LoginRequest): LoginResponse
-}
-
-data class LoginRequest(val username: String, val password: String)
-data class LoginResponse(
-    @SerializedName("data") val data: UserData?,
-    @SerializedName("message") val message: String,
-    @SerializedName("requiresPasswordChange") val requiresPasswordChange: Boolean? = null,
-    @SerializedName("status") val status: Int? = null,
-    @SerializedName("error") val error: Any? = null,
-    @SerializedName("stack") val stack: String? = null
-)
-
-data class UserData(
-    @SerializedName("id") val id: Long,
-    @SerializedName("phone") val phone: String?,
-    @SerializedName("firstName") val firstName: String?,
-    @SerializedName("lastName") val lastName: String?,
-    @SerializedName("password") val password: String?
-)
+import org.traccar.client.UserData // Ensure this import is present
 
 class LoginActivity : AppCompatActivity() {
-    private val retrofit = Retrofit.Builder()
-        .baseUrl("https://backend.credify.africa/")
-        .addConverterFactory(GsonConverterFactory.create())
-        .build()
-    private val apiService = retrofit.create(ApiService::class.java)
+    private lateinit var dbHelper: DatabaseHelper // Declare without initialization
+//    private val apiService = RetrofitClient.retrofit.create(SyncApiService::class.java)
+    private val apiService = object : SyncApiService {
+    override suspend fun sendPosition(position: Position): Unit = Unit
+    override suspend fun sendFormData(submission: FormSubmission): Unit = Unit
+    override suspend fun login(request: LoginRequest): LoginResponse {
+        Log.d("LoginActivity", "Mock login called with phone: ${request.phone}, deviceId: ${request.deviceId}")
+        return LoginResponse(
+            data = UserData(
+                id = 1L,
+                phone = request.phone,
+                firstName = "John",
+                lastName = "Doe",
+                password = "mockpassword"
+            ),
+            message = "Login successful",
+            status = 200
+        )
+    }
+    override suspend fun verifyCode(request: CodeVerificationRequest): CodeVerificationResponse = throw NotImplementedError()
+    override suspend fun getShipmentHistory(userId: String): List<FormSubmission> = throw NotImplementedError()
+}
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_login)
 
+        // Initialize dbHelper here, after the activity context is available
+        dbHelper = DatabaseHelper(this)
+
         val usernameInput = findViewById<EditText>(R.id.phone_number)
-        val passwordInput = findViewById<EditText>(R.id.password)
         val loginButton = findViewById<Button>(R.id.login_button)
 
-        // Request permissions
         if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION) != android.content.pm.PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(this, arrayOf(android.Manifest.permission.ACCESS_FINE_LOCATION, android.Manifest.permission.ACCESS_BACKGROUND_LOCATION), 1)
         }
 
         loginButton.setOnClickListener {
-            val username = usernameInput.text.toString()
-            val password = passwordInput.text.toString()
-            if (username.isNotEmpty() && password.isNotEmpty()) {
-                PreferenceManager.getDefaultSharedPreferences(this@LoginActivity).edit()
-                    .putString(MainFragment.KEY_DEVICE, "1")
-                    .apply()
-                startActivity(Intent(this@LoginActivity, MainActivity::class.java))
-                finish()
-//                CoroutineScope(Dispatchers.IO).launch {
-//                    try {
-//                        val response = apiService.login(LoginRequest(username, password))
-//                        if (response.data != null) {
-//                            val userData = response.data
-//                            val user = User(
-//                                id = userData.id,
-//                                phone = userData.phone,
-//                                firstName = userData.firstName,
-//                                lastName = userData.lastName,
-//                                password = userData.password
-//                            )
-//                            // Save to database
-//                            val db = DatabaseHelper(this@LoginActivity)
-//                            db.insertUserAsync(user, object : DatabaseHelper.DatabaseHandler<Unit?> {
-//                                override fun onComplete(success: Boolean, result: Unit?) {
-//                                    if (success) {
-//                                        // Save device ID to SharedPreferences
-//                                        PreferenceManager.getDefaultSharedPreferences(this@LoginActivity).edit()
-//                                            .putString(MainFragment.KEY_DEVICE, user.id.toString())
-//                                            .apply()
-//                                        startActivity(Intent(this@LoginActivity, MainActivity::class.java))
-//                                        finish()
-//                                    } else {
-//                                        runOnUiThread {
-//                                            Toast.makeText(this@LoginActivity, "Failed to save user data", Toast.LENGTH_SHORT).show()
-//                                        }
-//                                    }
-//                                }
-//                            })
-//                        } else {
-//                            runOnUiThread {
-//                                Toast.makeText(this@LoginActivity, "Login failed: ${response.message}", Toast.LENGTH_SHORT).show()
-//                            }
-//                        }
-//                    } catch (e: HttpException) {
-////                        val errorBody = e.response()?.errorBody()?.string()
-////                        val errorResponse = errorBody?.let { Gson().fromJson(it, ErrorResponse::class.java) }
-//                        runOnUiThread {
-//                            Toast.makeText(this@LoginActivity, "Incorrect Credentials", Toast.LENGTH_SHORT).show()
-//                        }
-//                    } catch (e: Exception) {
-//                        runOnUiThread {
-//                            Toast.makeText(this@LoginActivity, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
-//                        }
-//                    }
-//                }
-            } else {
-                Toast.makeText(this, "Please enter username and password", Toast.LENGTH_SHORT).show()
+            loginButton.isEnabled = false
+            val phoneNumber = usernameInput.text.toString().trim()
+
+            if (phoneNumber.isEmpty()) {
+                Toast.makeText(this, "Please enter your phone number", Toast.LENGTH_SHORT).show()
+                loginButton.isEnabled = true
+                return@setOnClickListener
+            }
+
+            val deviceId = Settings.Secure.getString(contentResolver, Settings.Secure.ANDROID_ID) ?: "unknown_device"
+            Log.d("LoginActivity", "Attempting login with phone: $phoneNumber, deviceId: $deviceId")
+
+            CoroutineScope(Dispatchers.IO).launch {
+                try {
+                    val response = apiService.login(LoginRequest(phoneNumber, deviceId))
+                    Log.d("LoginActivity","${response}")
+                    Log.d("LoginActivity", "API Response: status=${response.status}, message=${response.message}, data=${response.data}")
+                    if (response.status == 200 && response.data != null) {
+
+                            runOnUiThread {
+                                try {
+                                    Log.d("LoginActivity", "Login successful, preparing to transition to CodeConfirmationActivity")
+                                    val intent = Intent(this@LoginActivity, CodeConfirmationActivity::class.java)
+                                    Log.d("LoginActivity", "Intent created for CodeConfirmationActivity")
+                                    intent.putExtra("USER_DATA", response.data as Parcelable?)
+                                    Log.d("LoginActivity", "Extra added to intent: USER_DATA=${response.data}")
+                                    startActivity(intent)
+                                    Log.d("LoginActivity", "startActivity called for CodeConfirmationActivity")
+                                    finish()
+                                    Log.d("LoginActivity", "finish called for LoginActivity")
+                                } catch (e: Exception){
+                                    Log.e("LoginActivity", "${e}")
+                                }
+                            }
+
+
+                    } else {
+                        Log.e("LOGIN", "${response.message}")
+                        runOnUiThread {
+                            Toast.makeText(this@LoginActivity, "Login failed: ${response.message}", Toast.LENGTH_SHORT).show()
+                            loginButton.isEnabled = true
+                        }
+                    }
+                } catch (e: Exception) {
+                    Log.e("LoginActivity", "${e.message}")
+                    Log.e("LoginActivity", "Stack trace: ", e)
+                    runOnUiThread {
+                        Toast.makeText(this@LoginActivity, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
+                        loginButton.isEnabled = true
+                    }
+                }
             }
         }
     }

@@ -30,10 +30,10 @@ class ShipmentFormFragment : Fragment() {
         val cancelButton = view.findViewById<Button>(R.id.cancel_button)
 
         submitButton.setOnClickListener {
-            val containerId = containerIdInput.text.toString()
+//            val containerId = containerIdInput.text.toString()
             val comment = commentInput.text.toString()
 
-            if (containerId.isNotBlank() && comment.isNotBlank()) {
+            if (comment.isNotBlank()) {
                 val deviceId = PreferenceManager.getDefaultSharedPreferences(requireContext())
                     .getString(MainFragment.KEY_DEVICE, null) ?: return@setOnClickListener run {
                     Toast.makeText(requireContext(), "Device ID not found", Toast.LENGTH_SHORT).show()
@@ -41,10 +41,11 @@ class ShipmentFormFragment : Fragment() {
 
                 val submission = FormSubmission(
                     id = UUID.randomUUID().toString(),
-                    containerId = containerId,
+                    containerId = "1",
                     comment = comment,
                     deviceId = deviceId,
-                    timestamp = System.currentTimeMillis()
+                    timestamp = System.currentTimeMillis(),
+                    shipmentTrackingId = "1"
                 )
 
                 val db = DatabaseHelper(requireContext())

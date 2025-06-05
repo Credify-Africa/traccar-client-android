@@ -38,6 +38,13 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <activity
+            android:name=".CodeConfirmationActivity"
+            android:exported="false"
+            android:label="Code Confirmation" />
+
+
+
         <activity android:name=".SplashActivity" android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
