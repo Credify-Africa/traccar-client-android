@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="16dp"
+    android:gravity="center"
+    android:background="#F5F5F5">
+
+    <ImageView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:src="@drawable/ic_credify_logo"
+        android:contentDescription="Credify Logo"
+        android:layout_marginBottom="16dp" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Verify Your Code"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        android:layout_marginTop="16dp"
+        android:textColor="#333333" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Enter the code sent to your phone"
+        android:textSize="14sp"
+        android:layout_marginTop="8dp"
+        android:textColor="#757575" />
+
+    <EditText
+        android:id="@+id/verification_code"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Verification Code"
+        android:inputType="number"
+        android:layout_marginTop="24dp"
+        android:textColorHint="#757575"
+        android:background="@drawable/edittext_background"
+        android:padding="12dp"
+        android:contentDescription="Verification code input field" />
+
+    <Button
+        android:id="@+id/verify_button"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Verify Code"
+        android:backgroundTint="#1E88E5"
+        android:textColor="#FFFFFF"
+        android:layout_marginTop="24dp"
+        android:padding="12dp"
+        android:contentDescription="Verify code button" />
+
+</LinearLayout>

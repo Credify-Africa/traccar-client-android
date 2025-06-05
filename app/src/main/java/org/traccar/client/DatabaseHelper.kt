@@ -25,20 +25,22 @@ import android.database.sqlite.SQLiteOpenHelper
 import android.os.AsyncTask
 import java.sql.Date
 
-data class FormSubmission(
-    val id: String,
-    val containerId: String,
-    val comment: String,
-    val deviceId: String,
-    val timestamp: Long
-)
+//data class FormSubmission(
+//    val id: String,
+//    val containerId: String,
+//    val shipmentTrackingId: String,
+//    val comment: String,
+//    val deviceId: String,
+//    val timestamp: Long
+//)
 
 data class User(
     val id: Long,
     val phone: String?,
     val firstName: String?,
     val lastName: String?,
-    val password: String?
+    val password: String?,
+    var token: String?
 )
 
 
@@ -90,6 +92,7 @@ class DatabaseHelper(context: Context?) : SQLiteOpenHelper(context, DATABASE_NAM
             "CREATE TABLE form_submissions (" +
                     "id INTEGER PRIMARY KEY AUTOINCREMENT," +
                     "containerId TEXT," +
+                    "shipmentTrackingId TEXT," +
                     "comment TEXT," +
                     "deviceId TEXT," +
                     "timestamp INTEGER)"
@@ -100,7 +103,9 @@ class DatabaseHelper(context: Context?) : SQLiteOpenHelper(context, DATABASE_NAM
                     "phone TEXT," +
                     "firstName TEXT," +
                     "lastName TEXT," +
+                    "token TEXT,"+
                     "password TEXT)"
+
         )
     }
 
@@ -215,6 +220,7 @@ class DatabaseHelper(context: Context?) : SQLiteOpenHelper(context, DATABASE_NAM
                         id = cursor.getLong(cursor.getColumnIndex("id")).toString(),
                         containerId = cursor.getString(cursor.getColumnIndex("containerId")),
                         comment = cursor.getString(cursor.getColumnIndex("comment")),
+                        shipmentTrackingId = cursor.getString(cursor.getColumnIndex("shipmentTrackingId")),
                         deviceId = cursor.getString(cursor.getColumnIndex("deviceId")),
                         timestamp = cursor.getLong(cursor.getColumnIndex("timestamp"))
                     )
@@ -238,13 +244,13 @@ class DatabaseHelper(context: Context?) : SQLiteOpenHelper(context, DATABASE_NAM
         }
     }
 
-    fun deleteFormSubmissionAsync(id: Long, handler: DatabaseHandler<Unit?>) {
-        object : DatabaseAsyncTask<Unit>(handler) {
-            override fun executeMethod() {
-                deleteFormSubmission(id)
-            }
-        }.execute()
-    }
+//    fun deleteFormSubmissionAsync(id: Long, handler: Any) {
+//        object : DatabaseAsyncTask<Unit>(handler) {
+//            override fun executeMethod() {
+//                deleteFormSubmission(id)
+//            }
+//        }.execute()
+//    }
 
 
     // User methods
@@ -255,10 +261,11 @@ class DatabaseHelper(context: Context?) : SQLiteOpenHelper(context, DATABASE_NAM
         values.put("firstName", user.firstName)
         values.put("lastName", user.lastName)
         values.put("password", user.password)
-        db.insertOrThrow("user", null, values)
+        values.put("token", user.token)
+        db.insertWithOnConflict("user", null, values, SQLiteDatabase.CONFLICT_REPLACE)
     }
 
-    fun insertUserAsync(user: User, handler: DatabaseHandler<Unit?>) {
+    fun insertUserAsync(user: User, handler: DatabaseHandler<Unit?>) { // Updated handler type
         object : DatabaseAsyncTask<Unit?>(handler) {
             override fun executeMethod(): Unit? {
                 insertUser(user)
@@ -277,7 +284,8 @@ class DatabaseHelper(context: Context?) : SQLiteOpenHelper(context, DATABASE_NAM
                     phone = cursor.getString(cursor.getColumnIndex("phone")),
                     firstName = cursor.getString(cursor.getColumnIndex("firstName")),
                     lastName = cursor.getString(cursor.getColumnIndex("lastName")),
-                    password = cursor.getString(cursor.getColumnIndex("password"))
+                    password = cursor.getString(cursor.getColumnIndex("password")),
+                    token = cursor.getString(cursor.getColumnIndex("token"))
                 )
             }
         }
@@ -292,8 +300,30 @@ class DatabaseHelper(context: Context?) : SQLiteOpenHelper(context, DATABASE_NAM
         }.execute()
     }
 
+    fun clearUserData() {
+        db.delete("user", null, null)
+    }
+
+    fun clearUserDataAsync(handler: DatabaseHandler<Unit?>) {
+        object : DatabaseAsyncTask<Unit?>(handler) {
+            override fun executeMethod(): Unit? {
+                clearUserData()
+                return null
+            }
+        }.execute()
+    }
+
+    fun clearUserDataSync(): Boolean {
+        return try {
+            clearUserData()
+            true
+        } catch (e: Exception) {
+            false
+        }
+    }
+
     companion object {
-        const val DATABASE_VERSION = 4
+        const val DATABASE_VERSION = 5
         const val DATABASE_NAME = "traccar.db"
     }
 
