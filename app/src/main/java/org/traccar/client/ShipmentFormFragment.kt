@@ -1,6 +1,7 @@
 package org.traccar.client
 
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -10,7 +11,9 @@ import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
 import androidx.preference.PreferenceManager
+import androidx.work.OneTimeWorkRequestBuilder
 import java.util.UUID
+import androidx.work.WorkManager
 
 class ShipmentFormFragment : Fragment() {
 
@@ -39,13 +42,18 @@ class ShipmentFormFragment : Fragment() {
                     Toast.makeText(requireContext(), "Device ID not found", Toast.LENGTH_SHORT).show()
                 }
 
+                val sharedPreferences = PreferenceManager.getDefaultSharedPreferences(requireContext())
+                val shipmentTrackingId = sharedPreferences.getInt("first_shipment_tracking_id", -1).toString()
+                if (shipmentTrackingId == "-1") {
+                    Toast.makeText(requireContext(), "Shipment Tracking ID not found", Toast.LENGTH_SHORT).show()
+                    return@setOnClickListener
+                }
+
                 val submission = FormSubmission(
                     id = UUID.randomUUID().toString(),
-                    containerId = "1",
-                    comment = comment,
-                    deviceId = deviceId,
-                    timestamp = System.currentTimeMillis(),
-                    shipmentTrackingId = "1"
+                    eventDesciption = comment,
+                    eventTimeStamp = System.currentTimeMillis(),
+                    shipmentTrackingId = shipmentTrackingId
                 )
 
                 val db = DatabaseHelper(requireContext())
@@ -53,8 +61,13 @@ class ShipmentFormFragment : Fragment() {
                     override fun onComplete(success: Boolean, result: Unit?) {
                         if (success) {
                             Toast.makeText(requireContext(), "Submission saved", Toast.LENGTH_SHORT).show()
-                            findNavController().navigateUp()
+                            val syncWorkRequest = OneTimeWorkRequestBuilder<SyncWorker>()
+                                .build()
+                            WorkManager.getInstance(requireContext())
+                                .enqueue(syncWorkRequest)
+                            findNavController().navigate(R.id.historyFragment)
                         } else {
+                            Log.e("ShipmentForm", "Failed To save Submission")
                             Toast.makeText(requireContext(), "Failed to save submission", Toast.LENGTH_SHORT).show()
                         }
                     }

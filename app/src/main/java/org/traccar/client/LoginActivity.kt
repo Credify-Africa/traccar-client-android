@@ -18,27 +18,27 @@ import org.traccar.client.UserData // Ensure this import is present
 
 class LoginActivity : AppCompatActivity() {
     private lateinit var dbHelper: DatabaseHelper // Declare without initialization
-//    private val apiService = RetrofitClient.retrofit.create(SyncApiService::class.java)
-    private val apiService = object : SyncApiService {
-    override suspend fun sendPosition(position: Position): Unit = Unit
-    override suspend fun sendFormData(submission: FormSubmission): Unit = Unit
-    override suspend fun login(request: LoginRequest): LoginResponse {
-        Log.d("LoginActivity", "Mock login called with phone: ${request.phone}, deviceId: ${request.deviceId}")
-        return LoginResponse(
-            data = UserData(
-                id = 1L,
-                phone = request.phone,
-                firstName = "John",
-                lastName = "Doe",
-                password = "mockpassword"
-            ),
-            message = "Login successful",
-            status = 200
-        )
-    }
-    override suspend fun verifyCode(request: CodeVerificationRequest): CodeVerificationResponse = throw NotImplementedError()
-    override suspend fun getShipmentHistory(userId: String): List<FormSubmission> = throw NotImplementedError()
-}
+    private val apiService = RetrofitClient.retrofit.create(SyncApiService::class.java)
+//    private val apiService = object : SyncApiService {
+//    override suspend fun sendPosition(position: Position): Unit = Unit
+//    override suspend fun sendFormData(submission: FormSubmission): Unit = Unit
+//    override suspend fun login(request: LoginRequest): LoginResponse {
+//        Log.d("LoginActivity", "Mock login called with phone: ${request.phone}, deviceId: ${request.deviceId}")
+//        return LoginResponse(
+//            data = UserData(
+//                id = 1L,
+//                phone = request.phone,
+//                firstName = "John",
+//                lastName = "Doe",
+//                password = "mockpassword"
+//            ),
+//            message = "Login successful",
+//            status = 200
+//        )
+//    }
+//    override suspend fun verifyCode(request: CodeVerificationRequest): CodeVerificationResponse = throw NotImplementedError()
+//    override suspend fun getShipmentHistory(userId: String): List<ShipmentTracking> = throw NotImplementedError()
+//}
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

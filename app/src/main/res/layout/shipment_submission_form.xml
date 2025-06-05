@@ -27,32 +27,32 @@
                 android:padding="16dp">
 
                 <!-- Container ID Section -->
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Container ID"
-                    android:textSize="16sp"
-                    android:textStyle="bold"
-                    android:textColor="#333333"
-                    android:layout_marginBottom="4dp" />
+<!--                <TextView-->
+<!--                    android:layout_width="wrap_content"-->
+<!--                    android:layout_height="wrap_content"-->
+<!--                    android:text="Container ID"-->
+<!--                    android:textSize="16sp"-->
+<!--                    android:textStyle="bold"-->
+<!--                    android:textColor="#333333"-->
+<!--                    android:layout_marginBottom="4dp" />-->
 
-                <EditText
-                    android:id="@+id/container_id"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:hint="Enter Container ID"
-                    android:inputType="text"
-                    android:background="@drawable/edittext_background"
-                    android:padding="12dp"
-                    android:textColorHint="#757575"
-                    android:contentDescription="Container ID input field"
-                    android:layout_marginBottom="16dp" />
+<!--                <EditText-->
+<!--                    android:id="@+id/container_id"-->
+<!--                    android:layout_width="match_parent"-->
+<!--                    android:layout_height="wrap_content"-->
+<!--                    android:hint="Enter Container ID"-->
+<!--                    android:inputType="text"-->
+<!--                    android:background="@drawable/edittext_background"-->
+<!--                    android:padding="12dp"-->
+<!--                    android:textColorHint="#757575"-->
+<!--                    android:contentDescription="Container ID input field"-->
+<!--                    android:layout_marginBottom="16dp" />-->
 
                 <!-- Comment Section -->
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Comment"
+                    android:text="Report A Problem"
                     android:textSize="16sp"
                     android:textStyle="bold"
                     android:textColor="#333333"
