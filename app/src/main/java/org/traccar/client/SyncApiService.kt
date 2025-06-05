@@ -10,17 +10,17 @@ interface SyncApiService {
     @POST("api/positions")
     suspend fun sendPosition(@Body position: Position)
 
-    @POST("shipment-tracking")
+    @POST("shipment-tracking-event")
     suspend fun sendFormData(@Body submission: FormSubmission)
 
     @POST("driver-login")
     suspend fun login(@Body request: LoginRequest): LoginResponse
 
-    @POST("verify-code")
+    @POST("verify-email")
     suspend fun verifyCode(@Body request: CodeVerificationRequest): CodeVerificationResponse
 
     @GET("shipment-tracking/{userId}/")
-    suspend fun getShipmentHistory(@Path("userId") userId: String): List<FormSubmission>
+    suspend fun getShipmentHistory(@Path("userId") userId: String): List<ShipmentTracking>
 }
 
 data class LoginRequest(val phone: String, val deviceId: String)

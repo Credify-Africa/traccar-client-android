@@ -86,31 +86,31 @@ class CodeConfirmationActivity : AppCompatActivity() {
             .addConverterFactory(GsonConverterFactory.create())
             .build()
 
-//        apiService = retrofit.create(SyncApiService::class.java)
+        apiService = retrofit.create(SyncApiService::class.java)
 
-        apiService = object : SyncApiService {
-            override suspend fun sendPosition(position: Position): Unit = Unit
-            override suspend fun sendFormData(submission: FormSubmission): Unit = Unit
-            override suspend fun login(request: LoginRequest): LoginResponse = throw NotImplementedError()
-            override suspend fun verifyCode(request: CodeVerificationRequest): CodeVerificationResponse {
-                return CodeVerificationResponse(
-                    status = 200,
-                    message = "Verification successful",
-                    success = true,
-                    userData = UserData(
-                        id = userData.id,
-                        phone = userData.phone,
-                        firstName = userData.firstName,
-                        lastName = userData.lastName,
-                        password = userData.password
-                    ).apply { this.token = "mock-token-123" }
-                ).also { response ->
-                    // Simulate header in mock (though interceptor needs a real response)
-                    authToken = "Bearer mock-token-123"
-                }
-            }
-            override suspend fun getShipmentHistory(userId: String): List<FormSubmission> = throw NotImplementedError()
-        }
+//        apiService = object : SyncApiService {
+//            override suspend fun sendPosition(position: Position): Unit = Unit
+//            override suspend fun sendFormData(submission: FormSubmission): Unit = Unit
+//            override suspend fun login(request: LoginRequest): LoginResponse = throw NotImplementedError()
+//            override suspend fun verifyCode(request: CodeVerificationRequest): CodeVerificationResponse {
+//                return CodeVerificationResponse(
+//                    status = 200,
+//                    message = "Verification successful",
+//                    success = true,
+//                    userData = UserData(
+//                        id = userData.id,
+//                        phone = userData.phone,
+//                        firstName = userData.firstName,
+//                        lastName = userData.lastName,
+//                        password = userData.password
+//                    ).apply { this.token = "mock-token-123" }
+//                ).also { response ->
+//                    // Simulate header in mock (though interceptor needs a real response)
+//                    authToken = "Bearer mock-token-123"
+//                }
+//            }
+//            override suspend fun getShipmentHistory(userId: String): List<ShipmentTracking> = throw NotImplementedError()
+//        }
 
         val codeInput = findViewById<EditText>(R.id.verification_code)
         val verifyButton = findViewById<Button>(R.id.verify_button)

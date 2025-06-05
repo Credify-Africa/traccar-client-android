@@ -43,6 +43,11 @@ data class User(
     var token: String?
 )
 
+//data class ShipmentTracking(
+//    val id: Int,
+//    val deviceId: String
+//)
+
 
 class DatabaseHelper(context: Context?) : SQLiteOpenHelper(context, DATABASE_NAME, null, DATABASE_VERSION) {
 
@@ -91,11 +96,9 @@ class DatabaseHelper(context: Context?) : SQLiteOpenHelper(context, DATABASE_NAM
         db.execSQL(
             "CREATE TABLE form_submissions (" +
                     "id INTEGER PRIMARY KEY AUTOINCREMENT," +
-                    "containerId TEXT," +
                     "shipmentTrackingId TEXT," +
-                    "comment TEXT," +
-                    "deviceId TEXT," +
-                    "timestamp INTEGER)"
+                    "eventDescription TEXT," +
+                    "eventTimeStamp INTEGER)"
         )
         db.execSQL(
             "CREATE TABLE user (" +
@@ -107,12 +110,18 @@ class DatabaseHelper(context: Context?) : SQLiteOpenHelper(context, DATABASE_NAM
                     "password TEXT)"
 
         )
+        db.execSQL(
+            "CREATE TABLE shipment_tracking (" +
+                    "id INTEGER PRIMARY KEY," +
+                    "deviceId TEXT NOT NULL)"
+        )
     }
 
     override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
         db.execSQL("DROP TABLE IF EXISTS position;")
         db.execSQL("DROP TABLE IF EXISTS form_submissions;")
         db.execSQL("DROP TABLE IF EXISTS user;")
+        db.execSQL("DROP TABLE IF EXISTS shipment_tracking;")
         onCreate(db)
     }
 
@@ -120,6 +129,7 @@ class DatabaseHelper(context: Context?) : SQLiteOpenHelper(context, DATABASE_NAM
         db.execSQL("DROP TABLE IF EXISTS position;")
         db.execSQL("DROP TABLE IF EXISTS form_submissions;")
         db.execSQL("DROP TABLE IF EXISTS user;")
+        db.execSQL("DROP TABLE IF EXISTS shipment_tracking;")
         onCreate(db)
     }
 
@@ -195,10 +205,10 @@ class DatabaseHelper(context: Context?) : SQLiteOpenHelper(context, DATABASE_NAM
 
     fun insertFormSubmission(submission: FormSubmission) {
         val values = ContentValues()
-        values.put("containerId", submission.containerId)
-        values.put("comment", submission.comment)
-        values.put("deviceId", submission.deviceId)
-        values.put("timestamp", submission.timestamp)
+        values.put("shipmentTrackingId", submission.shipmentTrackingId)
+        values.put("eventDescription", submission.eventDesciption)
+//        values.put("deviceId", submission.deviceId)
+        values.put("eventTimeStamp", submission.eventTimeStamp)
         db.insertOrThrow("form_submissions", null, values)
     }
 
@@ -213,16 +223,14 @@ class DatabaseHelper(context: Context?) : SQLiteOpenHelper(context, DATABASE_NAM
     @SuppressLint("Range")
     fun selectAllFormSubmissions(): List<FormSubmission> {
         val submissions = mutableListOf<FormSubmission>()
-        db.rawQuery("SELECT * FROM form_submissions ORDER BY timestamp DESC", null).use { cursor ->
+        db.rawQuery("SELECT * FROM form_submissions ORDER BY eventTimeStamp DESC", null).use { cursor ->
             while (cursor.moveToNext()) {
                 submissions.add(
                     FormSubmission(
                         id = cursor.getLong(cursor.getColumnIndex("id")).toString(),
-                        containerId = cursor.getString(cursor.getColumnIndex("containerId")),
-                        comment = cursor.getString(cursor.getColumnIndex("comment")),
+                        eventDesciption = cursor.getString(cursor.getColumnIndex("eventDescription")),
                         shipmentTrackingId = cursor.getString(cursor.getColumnIndex("shipmentTrackingId")),
-                        deviceId = cursor.getString(cursor.getColumnIndex("deviceId")),
-                        timestamp = cursor.getLong(cursor.getColumnIndex("timestamp"))
+                        eventTimeStamp = cursor.getLong(cursor.getColumnIndex("eventTimeStamp"))
                     )
                 )
             }
@@ -323,7 +331,7 @@ class DatabaseHelper(context: Context?) : SQLiteOpenHelper(context, DATABASE_NAM
     }
 
     companion object {
-        const val DATABASE_VERSION = 5
+        const val DATABASE_VERSION = 6
         const val DATABASE_NAME = "traccar.db"
     }
 
