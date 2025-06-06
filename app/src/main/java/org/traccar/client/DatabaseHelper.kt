@@ -25,21 +25,28 @@ import android.database.sqlite.SQLiteOpenHelper
 import android.os.AsyncTask
 import java.sql.Date
 
-data class FormSubmission(
-    val id: String,
-    val containerId: String,
-    val comment: String,
-    val deviceId: String,
-    val timestamp: Long
-)
+//data class FormSubmission(
+//    val id: String,
+//    val containerId: String,
+//    val shipmentTrackingId: String,
+//    val comment: String,
+//    val deviceId: String,
+//    val timestamp: Long
+//)
 
 data class User(
     val id: Long,
     val phone: String?,
     val firstName: String?,
     val lastName: String?,
-    val password: String?
+    val password: String?,
+    var token: String?
 )
+
+//data class ShipmentTracking(
+//    val id: Int,
+//    val deviceId: String
+//)
 
 
 class DatabaseHelper(context: Context?) : SQLiteOpenHelper(context, DATABASE_NAME, null, DATABASE_VERSION) {
@@ -89,10 +96,9 @@ class DatabaseHelper(context: Context?) : SQLiteOpenHelper(context, DATABASE_NAM
         db.execSQL(
             "CREATE TABLE form_submissions (" +
                     "id INTEGER PRIMARY KEY AUTOINCREMENT," +
-                    "containerId TEXT," +
-                    "comment TEXT," +
-                    "deviceId TEXT," +
-                    "timestamp INTEGER)"
+                    "shipmentTrackingId TEXT," +
+                    "eventDescription TEXT," +
+                    "eventTimeStamp INTEGER)"
         )
         db.execSQL(
             "CREATE TABLE user (" +
@@ -100,7 +106,14 @@ class DatabaseHelper(context: Context?) : SQLiteOpenHelper(context, DATABASE_NAM
                     "phone TEXT," +
                     "firstName TEXT," +
                     "lastName TEXT," +
+                    "token TEXT,"+
                     "password TEXT)"
+
+        )
+        db.execSQL(
+            "CREATE TABLE shipment_tracking (" +
+                    "id INTEGER PRIMARY KEY," +
+                    "deviceId TEXT NOT NULL)"
         )
     }
 
@@ -108,6 +121,7 @@ class DatabaseHelper(context: Context?) : SQLiteOpenHelper(context, DATABASE_NAM
         db.execSQL("DROP TABLE IF EXISTS position;")
         db.execSQL("DROP TABLE IF EXISTS form_submissions;")
         db.execSQL("DROP TABLE IF EXISTS user;")
+        db.execSQL("DROP TABLE IF EXISTS shipment_tracking;")
         onCreate(db)
     }
 
@@ -115,6 +129,7 @@ class DatabaseHelper(context: Context?) : SQLiteOpenHelper(context, DATABASE_NAM
         db.execSQL("DROP TABLE IF EXISTS position;")
         db.execSQL("DROP TABLE IF EXISTS form_submissions;")
         db.execSQL("DROP TABLE IF EXISTS user;")
+        db.execSQL("DROP TABLE IF EXISTS shipment_tracking;")
         onCreate(db)
     }
 
@@ -190,10 +205,10 @@ class DatabaseHelper(context: Context?) : SQLiteOpenHelper(context, DATABASE_NAM
 
     fun insertFormSubmission(submission: FormSubmission) {
         val values = ContentValues()
-        values.put("containerId", submission.containerId)
-        values.put("comment", submission.comment)
-        values.put("deviceId", submission.deviceId)
-        values.put("timestamp", submission.timestamp)
+        values.put("shipmentTrackingId", submission.shipmentTrackingId)
+        values.put("eventDescription", submission.eventDesciption)
+//        values.put("deviceId", submission.deviceId)
+        values.put("eventTimeStamp", submission.eventTimeStamp)
         db.insertOrThrow("form_submissions", null, values)
     }
 
@@ -208,15 +223,14 @@ class DatabaseHelper(context: Context?) : SQLiteOpenHelper(context, DATABASE_NAM
     @SuppressLint("Range")
     fun selectAllFormSubmissions(): List<FormSubmission> {
         val submissions = mutableListOf<FormSubmission>()
-        db.rawQuery("SELECT * FROM form_submissions ORDER BY timestamp DESC", null).use { cursor ->
+        db.rawQuery("SELECT * FROM form_submissions ORDER BY eventTimeStamp DESC", null).use { cursor ->
             while (cursor.moveToNext()) {
                 submissions.add(
                     FormSubmission(
                         id = cursor.getLong(cursor.getColumnIndex("id")).toString(),
-                        containerId = cursor.getString(cursor.getColumnIndex("containerId")),
-                        comment = cursor.getString(cursor.getColumnIndex("comment")),
-                        deviceId = cursor.getString(cursor.getColumnIndex("deviceId")),
-                        timestamp = cursor.getLong(cursor.getColumnIndex("timestamp"))
+                        eventDesciption = cursor.getString(cursor.getColumnIndex("eventDescription")),
+                        shipmentTrackingId = cursor.getString(cursor.getColumnIndex("shipmentTrackingId")),
+                        eventTimeStamp = cursor.getLong(cursor.getColumnIndex("eventTimeStamp"))
                     )
                 )
             }
@@ -238,13 +252,13 @@ class DatabaseHelper(context: Context?) : SQLiteOpenHelper(context, DATABASE_NAM
         }
     }
 
-    fun deleteFormSubmissionAsync(id: Long, handler: DatabaseHandler<Unit?>) {
-        object : DatabaseAsyncTask<Unit>(handler) {
-            override fun executeMethod() {
-                deleteFormSubmission(id)
-            }
-        }.execute()
-    }
+//    fun deleteFormSubmissionAsync(id: Long, handler: Any) {
+//        object : DatabaseAsyncTask<Unit>(handler) {
+//            override fun executeMethod() {
+//                deleteFormSubmission(id)
+//            }
+//        }.execute()
+//    }
 
 
     // User methods
@@ -255,10 +269,11 @@ class DatabaseHelper(context: Context?) : SQLiteOpenHelper(context, DATABASE_NAM
         values.put("firstName", user.firstName)
         values.put("lastName", user.lastName)
         values.put("password", user.password)
-        db.insertOrThrow("user", null, values)
+        values.put("token", user.token)
+        db.insertWithOnConflict("user", null, values, SQLiteDatabase.CONFLICT_REPLACE)
     }
 
-    fun insertUserAsync(user: User, handler: DatabaseHandler<Unit?>) {
+    fun insertUserAsync(user: User, handler: DatabaseHandler<Unit?>) { // Updated handler type
         object : DatabaseAsyncTask<Unit?>(handler) {
             override fun executeMethod(): Unit? {
                 insertUser(user)
@@ -277,7 +292,8 @@ class DatabaseHelper(context: Context?) : SQLiteOpenHelper(context, DATABASE_NAM
                     phone = cursor.getString(cursor.getColumnIndex("phone")),
                     firstName = cursor.getString(cursor.getColumnIndex("firstName")),
                     lastName = cursor.getString(cursor.getColumnIndex("lastName")),
-                    password = cursor.getString(cursor.getColumnIndex("password"))
+                    password = cursor.getString(cursor.getColumnIndex("password")),
+                    token = cursor.getString(cursor.getColumnIndex("token"))
                 )
             }
         }
@@ -292,8 +308,30 @@ class DatabaseHelper(context: Context?) : SQLiteOpenHelper(context, DATABASE_NAM
         }.execute()
     }
 
+    fun clearUserData() {
+        db.delete("user", null, null)
+    }
+
+    fun clearUserDataAsync(handler: DatabaseHandler<Unit?>) {
+        object : DatabaseAsyncTask<Unit?>(handler) {
+            override fun executeMethod(): Unit? {
+                clearUserData()
+                return null
+            }
+        }.execute()
+    }
+
+    fun clearUserDataSync(): Boolean {
+        return try {
+            clearUserData()
+            true
+        } catch (e: Exception) {
+            false
+        }
+    }
+
     companion object {
-        const val DATABASE_VERSION = 4
+        const val DATABASE_VERSION = 6
         const val DATABASE_NAME = "traccar.db"
     }
 

@@ -15,12 +15,15 @@
  */
 package org.traccar.client
 
+import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.util.Log
 import android.widget.Button
 import androidx.navigation.NavController
 import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.ui.setupWithNavController
+import androidx.preference.PreferenceManager
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 
@@ -41,6 +44,27 @@ class MainActivity : AppCompatActivity() {
         // Set up bottom navigation
         val bottomNav = findViewById<BottomNavigationView>(R.id.bottom_nav)
         bottomNav.setupWithNavController(navController)
+
+        bottomNav.setOnItemSelectedListener { item ->
+            println("Selected item: ${item.itemId}")
+            when (item.itemId) {
+                R.id.historyFragment -> {
+                    navController.navigate(R.id.historyFragment)
+                    true
+                }
+                R.id.logout -> {
+                    Log.d("MainActivity","Logging out")
+                    PreferenceManager.getDefaultSharedPreferences(this)
+                        .edit()
+                        .remove(MainFragment.KEY_DEVICE)
+                        .apply()
+                    startActivity(Intent(this, LoginActivity::class.java))
+                    finish()
+                    true
+                }
+                else -> false
+            }
+        }
 
         /// Initialize FAB
         fab = findViewById(R.id.fab)
