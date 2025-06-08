@@ -1,5 +1,7 @@
 package org.traccar.client
 
+import android.Manifest
+import android.app.AlertDialog
 import android.content.Intent
 import android.os.Bundle
 import android.util.Log
@@ -17,13 +19,22 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import retrofit2.HttpException
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
+import android.content.pm.PackageManager
+import android.net.Uri
+import android.os.Build
+import android.content.Context
+import android.provider.Settings
 
 class HistoryFragment : Fragment() {
 
     private var recyclerView: RecyclerView? = null
     private lateinit var adapter: SubmissionAdapter
     private lateinit var dbHelper: DatabaseHelper
-    private val apiService = RetrofitClient.retrofit.create(SyncApiService::class.java)
+//    private val apiService = RetrofitClient.retrofit.create(SyncApiService::class.java)
+    private lateinit var apiService: SyncApiService
+    private var requestingPermissions: Boolean = false
 //
 //    data class ShipmentTracking (
 //        val id :Int,
@@ -67,6 +78,162 @@ class HistoryFragment : Fragment() {
         } else {
             Log.e("History", "RecyclerView is null")
         }
+//        Log.e("History", "${PreferenceManager.getDefaultSharedPreferences(requireContext())
+//            .getString(MainFragment.KEY_DEVICE, null)}")
+
+        val sharedPreferences = PreferenceManager.getDefaultSharedPreferences(requireContext())
+        if (!isServiceRunning(TrackingService::class.java)) {
+            startTrackingService(checkPermission = true)
+        }
+    }
+
+    override fun onStart() {
+        super.onStart()
+        if (requestingPermissions) {
+            requestingPermissions = BatteryOptimizationHelper().requestException(requireContext())
+        }
+    }
+
+    private fun isServiceRunning(serviceClass: Class<*>): Boolean {
+        val manager = requireContext().getSystemService(Context.ACTIVITY_SERVICE) as android.app.ActivityManager
+        for (service in manager.getRunningServices(Integer.MAX_VALUE)) {
+            if (serviceClass.name == service.service.className) {
+                return true
+            }
+        }
+        return false
+    }
+
+    private fun startTrackingService(checkPermission: Boolean) {
+        val requiredPermissions = mutableSetOf<String>()
+        if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            requiredPermissions.add(Manifest.permission.ACCESS_FINE_LOCATION)
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q &&
+            ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_BACKGROUND_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            requiredPermissions.add(Manifest.permission.ACCESS_BACKGROUND_LOCATION)
+        }
+
+        if (requiredPermissions.isEmpty()) {
+            // Permissions granted, start the Service
+            ContextCompat.startForegroundService(requireContext(), Intent(requireContext(), TrackingService::class.java))
+            PreferenceManager.getDefaultSharedPreferences(requireContext())
+                .edit()
+                .putBoolean("status", true)
+                .apply()
+            Log.d("HistoryFragment", "TrackingService started")
+            // Request battery optimization exemption
+            requestingPermissions = BatteryOptimizationHelper().requestException(requireContext())
+        } else {
+            // Check if we should show rationale
+            val showRationale = requiredPermissions.any { permission ->
+                ActivityCompat.shouldShowRequestPermissionRationale(requireActivity(), permission)
+            }
+            Log.d("HistoryFragment", "Permissions needed: $requiredPermissions, showRationale: $showRationale")
+            if (showRationale) {
+                showPermissionRationaleDialog(requiredPermissions)
+            } else {
+                // Check if permanently denied
+                if (requiredPermissions.any { !ActivityCompat.shouldShowRequestPermissionRationale(requireActivity(), it) &&
+                            ContextCompat.checkSelfPermission(requireContext(), it) == PackageManager.PERMISSION_DENIED }) {
+                    showSettingsDialog()
+                } else {
+                    requestPermissions(requiredPermissions.toTypedArray(), PERMISSIONS_REQUEST_LOCATION)
+                }
+            }
+        }
+    }
+
+    private fun showPermissionRationaleDialog(requiredPermissions: Set<String>) {
+        AlertDialog.Builder(requireContext())
+            .setTitle("Location Permissions Required")
+            .setMessage("This app needs location permissions to track your location in the background. Please grant access to continue.")
+            .setPositiveButton("OK") { _, _ ->
+                Log.d("HistoryFragment", "Requesting permissions: $requiredPermissions")
+                requestPermissions(requiredPermissions.toTypedArray(), PERMISSIONS_REQUEST_LOCATION)
+            }
+            .setNegativeButton("Cancel") { _, _ ->
+                Log.d("HistoryFragment", "Permission rationale dialog cancelled")
+                Toast.makeText(requireContext(), "Permissions denied, tracking cannot start", Toast.LENGTH_SHORT).show()
+                PreferenceManager.getDefaultSharedPreferences(requireContext())
+                    .edit()
+                    .putBoolean("status", false)
+                    .apply()
+            }
+            .show()
+    }
+
+    private fun showSettingsDialog() {
+        AlertDialog.Builder(requireContext())
+            .setTitle("Permissions Denied")
+            .setMessage("Location permissions have been permanently denied. Please enable them in the app settings to use tracking.")
+            .setPositiveButton("Go to Settings") { _, _ ->
+                Log.d("HistoryFragment", "Navigating to app settings")
+                val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
+                intent.data = Uri.fromParts("package", requireContext().packageName, null)
+                startActivity(intent)
+            }
+            .setNegativeButton("Cancel") { _, _ ->
+                Log.d("HistoryFragment", "Settings dialog cancelled")
+                Toast.makeText(requireContext(), "Permissions denied, tracking cannot start", Toast.LENGTH_SHORT).show()
+                PreferenceManager.getDefaultSharedPreferences(requireContext())
+                    .edit()
+                    .putBoolean("status", false)
+                    .apply()
+            }
+            .show()
+    }
+
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<String>,
+        grantResults: IntArray
+    ) {
+        Log.d("HistoryFragment", "onRequestPermissionsResult: requestCode=$requestCode, permissions=${permissions.joinToString()}, results=${grantResults.joinToString()}")
+        if (requestCode == PERMISSIONS_REQUEST_LOCATION) {
+            val fineLocationGranted = permissions.indexOf(Manifest.permission.ACCESS_FINE_LOCATION).let { index ->
+                index != -1 && grantResults[index] == PackageManager.PERMISSION_GRANTED
+            }
+            val backgroundLocationGranted = permissions.indexOf(Manifest.permission.ACCESS_BACKGROUND_LOCATION).let { index ->
+                index == -1 || grantResults[index] == PackageManager.PERMISSION_GRANTED
+            }
+
+            if (fineLocationGranted) {
+                Log.d("HistoryFragment", "ACCESS_FINE_LOCATION granted, starting TrackingService")
+                startTrackingService(checkPermission = false)
+                if (!backgroundLocationGranted && Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                    Log.d("HistoryFragment", "ACCESS_BACKGROUND_LOCATION denied, showing rationale for background")
+                    showBackgroundLocationRationaleDialog()
+                }
+            } else {
+                Log.d("HistoryFragment", "Permissions denied: fineLocation=$fineLocationGranted, backgroundLocation=$backgroundLocationGranted")
+                Toast.makeText(requireContext(), "Permissions denied, tracking cannot start", Toast.LENGTH_SHORT).show()
+                PreferenceManager.getDefaultSharedPreferences(requireContext())
+                    .edit()
+                    .putBoolean("status", false)
+                    .apply()
+                // Check for permanently denied permissions
+                if (permissions.any { !ActivityCompat.shouldShowRequestPermissionRationale(requireActivity(), it) }) {
+                    Log.d("HistoryFragment", "Some permissions permanently denied, showing settings dialog")
+                    showSettingsDialog()
+                }
+            }
+        }
+    }
+
+    private fun showBackgroundLocationRationaleDialog() {
+        AlertDialog.Builder(requireContext())
+            .setTitle("Background Location Permission")
+            .setMessage("For continuous tracking, please allow background location access.")
+            .setPositiveButton("OK") { _, _ ->
+                Log.d("HistoryFragment", "Requesting ACCESS_BACKGROUND_LOCATION")
+                requestPermissions(arrayOf(Manifest.permission.ACCESS_BACKGROUND_LOCATION), PERMISSIONS_REQUEST_LOCATION)
+            }
+            .setNegativeButton("Cancel") { _, _ ->
+                Log.d("HistoryFragment", "Background location permission declined")
+                Toast.makeText(requireContext(), "Background location denied, tracking may be limited", Toast.LENGTH_SHORT).show()
+            }
+            .show()
     }
 
     private fun fetchSubmissions() {
@@ -79,9 +246,18 @@ class HistoryFragment : Fragment() {
                     return@launch
                 }
 
+                val token = PreferenceManager.getDefaultSharedPreferences(requireContext())
+                    .getString("auth_token", null)
+
+                apiService = RetrofitClient.getApiKeyClient(token.toString()).create(SyncApiService::class.java)
+
                 val submissions = withContext(Dispatchers.IO) {
                     apiService.getShipmentHistory(user.id.toString()).takeLast(20)
                 }
+
+//                val submissions = withContext(Dispatchers.IO) {
+//                    apiService.getShipmentHistory(user.id.toString()).takeLast(20)
+//                }
                 Log.d("History", "Submissions: ${submissions}")
                 adapter.setSubmissions(submissions)
                 Log.d("History", "Submissions set")
@@ -108,10 +284,12 @@ class HistoryFragment : Fragment() {
 //                        Toast.makeText(requireContext(), "Failed to clear user data", Toast.LENGTH_SHORT).show()
                     }
                 } else {
-                    Toast.makeText(requireContext(), "Error: ${e.message}", Toast.LENGTH_SHORT).show()
+                    Log.e("History", "$e")
+//                    Toast.makeText(requireContext(), "Error: ${e.message}", Toast.LENGTH_SHORT).show()
                 }
             } catch (e: Exception) {
-                Toast.makeText(requireContext(), "Error: ${e.message}", Toast.LENGTH_SHORT).show()
+                Log.e("History", "$e")
+//                Toast.makeText(requireContext(), "Error: ${e.message}", Toast.LENGTH_SHORT).show()
             }
         }
     }
@@ -145,5 +323,8 @@ class HistoryFragment : Fragment() {
             val containerId: TextView = itemView.findViewById(R.id.container_id)
             val comment: TextView = itemView.findViewById(R.id.comment)
         }
+    }
+    companion object {
+        private const val PERMISSIONS_REQUEST_LOCATION = 2
     }
 }
