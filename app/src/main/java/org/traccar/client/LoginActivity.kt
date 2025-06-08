@@ -23,6 +23,7 @@ import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import kotlin.text.startsWith
 import okhttp3.logging.HttpLoggingInterceptor
+import java.util.Random
 
 class LoginActivity : AppCompatActivity() {
     private lateinit var dbHelper: DatabaseHelper // Declare without initialization
@@ -54,7 +55,7 @@ private lateinit var apiService: SyncApiService
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_login)
-
+        initializePreferences()
         // Initialize dbHelper here, after the activity context is available
         dbHelper = DatabaseHelper(this)
         val preferences = PreferenceManager.getDefaultSharedPreferences(this)
@@ -67,8 +68,8 @@ private lateinit var apiService: SyncApiService
             .addInterceptor { chain ->
                 val request = chain.request()
                 val response = chain.proceed(request)
-                val authHeader = response.header("Authorization")
-                if (authHeader != null && authHeader.startsWith("Bearer ")) {
+                val authHeader = response.header("Set-Cookie")
+                if (authHeader != null && authHeader.startsWith("Authorization=")) {
                     authToken = authHeader
                 }
                 response
@@ -102,21 +103,27 @@ private lateinit var apiService: SyncApiService
 
             val deviceId = preferences.getString(MainFragment.KEY_DEVICE, "undefined")!!
             Log.d("LoginActivity", "Attempting login with phone: $phoneNumber, deviceId: $deviceId")
+            Toast.makeText(this@LoginActivity, "ID: ${deviceId}", Toast.LENGTH_LONG).show()
 
             CoroutineScope(Dispatchers.IO).launch {
-                try {
+//                try {
                     val response = apiService.login(LoginRequest(phoneNumber, deviceId))
                     Log.d("LoginActivity","Response ${response}")
-                    Log.d("LoginActivity", "API Response: status=${response.status}, message=${response.message}, data=${response.data}")
-                    if (response.status == 200 && response.data != null) {
+                    Log.d("LoginActivity", "API Response: status=${response.status}, message=${response.message}, data=${response.user}")
+                    if (response.user != null) {
 
                         if (authToken != null) {
+                            PreferenceManager.getDefaultSharedPreferences(this@LoginActivity)
+                                .edit()
+                                .putString("auth_token", authToken)
+                                .apply()
+
                             dbHelper.insertUserAsync(User(
-                                id = response.data.id,
-                                phone = response.data.phone,
-                                firstName = response.data.firstName,
-                                lastName = response.data.lastName,
-                                password = response.data.password,
+                                id = response.user.id,
+                                phone = response.user.phone,
+                                firstName = response.user.firstName,
+                                lastName = response.user.lastName,
+                                password = response.user.password,
                                 token = authToken
                             ), object : DatabaseHandler<Unit?> {
                                 override fun onComplete(success: Boolean, result: Unit?) {
@@ -163,15 +170,54 @@ private lateinit var apiService: SyncApiService
                             loginButton.isEnabled = true
                         }
                     }
-                } catch (e: Exception) {
-                    Log.e("LoginActivity", "${e.message} ")
-                    Log.e("LoginActivity", "Stack trace: ", e)
-                    runOnUiThread {
-                        Toast.makeText(this@LoginActivity, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
-                        loginButton.isEnabled = true
-                    }
-                }
+//                } catch (e: Exception) {
+//                    Log.e("LoginActivity", "${e.message} ")
+//                    Log.e("LoginActivity", "Stack trace: ", e)
+//                    runOnUiThread {
+//                        Toast.makeText(this@LoginActivity, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
+//                        loginButton.isEnabled = true
+//                    }
+//                }
             }
         }
+    }
+    private fun initializePreferences() {
+        val sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this)
+        val editor = sharedPreferences.edit()
+
+        // Set status to true to enable TrackingService
+        editor.putBoolean("status", true)
+
+        // Set device ID (random 6-digit number)
+        if (!sharedPreferences.contains("id")) {
+            val id = (Random().nextInt(900000) + 100000).toString()
+            editor.putString("id", id)
+
+
+
+        }
+
+        // Set server URL
+        editor.putString("url", "https://tracking.credify.africa") // Replace with your server URL
+
+        // Set accuracy
+        editor.putString("accuracy", "medium")
+
+        // Set interval
+        editor.putString("interval", "300")
+
+        // Set distance
+        editor.putString("distance", "0")
+
+        // Set angle
+        editor.putString("angle", "0")
+
+        // Set buffer
+        editor.putBoolean("buffer", true)
+
+        // Set wakelock
+        editor.putBoolean("wakelock", true)
+
+        editor.apply()
     }
 }

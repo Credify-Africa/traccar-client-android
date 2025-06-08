@@ -19,14 +19,14 @@ interface SyncApiService {
     @POST("verify-email")
     suspend fun verifyCode(@Body request: CodeVerificationRequest): CodeVerificationResponse
 
-    @GET("shipment-tracking/{userId}/")
+    @GET("shipment-tracking/{userId}")
     suspend fun getShipmentHistory(@Path("userId") userId: String): List<ShipmentTracking>
 }
 
 data class LoginRequest(val phone: String, val deviceId: String)
 
 data class LoginResponse(
-    val data: UserData?,
+    val user: UserData?,
     val message: String,
     val requiresPasswordChange: Boolean? = null,
     val status: Int? = null,

@@ -11,10 +11,20 @@ import retrofit2.HttpException
 class SyncWorker(private val appContext: Context, params: WorkerParameters) :
     CoroutineWorker(appContext, params) {
 
-    private val apiService = RetrofitClient.retrofit.create(SyncApiService::class.java)
+//    private val apiService = RetrofitClient.retrofit.create(SyncApiService::class.java)
+    private lateinit var apiService: SyncApiService
+
     private val dbHelper = DatabaseHelper(appContext)
 
     override suspend fun doWork(): Result {
+        val sharedPreferences = appContext.getSharedPreferences("shared_prefs", Context.MODE_PRIVATE)
+        val token = sharedPreferences.getString("auth_token", null)
+
+        if (token.isNullOrEmpty()) {
+            return Result.failure()
+        }
+        apiService = RetrofitClient.getApiKeyClient(token).create(SyncApiService::class.java)
+
         val unsyncedSubmissions = dbHelper.selectAllFormSubmissions()
         for (submission in unsyncedSubmissions) {
             try {
