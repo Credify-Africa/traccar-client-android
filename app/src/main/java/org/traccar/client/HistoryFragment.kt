@@ -246,14 +246,21 @@ class HistoryFragment : Fragment() {
                     return@launch
                 }
 
-                val token = PreferenceManager.getDefaultSharedPreferences(requireContext())
+                val rawToken = PreferenceManager.getDefaultSharedPreferences(requireContext())
                     .getString("auth_token", null)
+
+                val token = rawToken?.substringAfter("Authorization=")?.substringBefore(";")?.trim()
+
+                Log.e("History", "Token: ${token}")
 
                 apiService = RetrofitClient.getApiKeyClient(token.toString()).create(SyncApiService::class.java)
 
-                val submissions = withContext(Dispatchers.IO) {
-                    apiService.getShipmentHistory(user.id.toString()).takeLast(20)
+                val response = withContext(Dispatchers.IO) {
+                    apiService.getShipmentHistory(user.id.toString())
                 }
+                val submissions = response.data.takeLast(20)
+                adapter.setSubmissions(submissions)
+
 
 //                val submissions = withContext(Dispatchers.IO) {
 //                    apiService.getShipmentHistory(user.id.toString()).takeLast(20)
@@ -273,6 +280,8 @@ class HistoryFragment : Fragment() {
                     Log.d("History", "Saved first shipmentTrackingId: $firstShipmentTrackingId")
                 }
             } catch (e: HttpException) {
+                val errorBody = e.response()?.errorBody()?.string()
+                Log.e("History", "HttpException: Code=${e.code()}, Body=$errorBody")
                 if (e.code() == 401) { // Fixed deprecated code()
                     Log.e("History", "Session expired. Please log in again.")
 
@@ -287,6 +296,7 @@ class HistoryFragment : Fragment() {
                     Log.e("History", "$e")
 //                    Toast.makeText(requireContext(), "Error: ${e.message}", Toast.LENGTH_SHORT).show()
                 }
+                Log.e("History", "HttpException: Code=${e.code()}, Body=$errorBody")
             } catch (e: Exception) {
                 Log.e("History", "$e")
 //                Toast.makeText(requireContext(), "Error: ${e.message}", Toast.LENGTH_SHORT).show()

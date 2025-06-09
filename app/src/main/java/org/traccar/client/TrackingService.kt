@@ -101,6 +101,7 @@ class TrackingService : Service() {
                 .setSmallIcon(R.drawable.ic_stat_notify)
                 .setPriority(NotificationCompat.PRIORITY_LOW)
                 .setCategory(NotificationCompat.CATEGORY_SERVICE)
+                .setOngoing(true)
             val intent = Intent(context, MainActivity::class.java)
             builder
                 .setContentTitle(context.getString(R.string.settings_status_on_summary))
