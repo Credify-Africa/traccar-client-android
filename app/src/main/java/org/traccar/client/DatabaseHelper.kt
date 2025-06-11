@@ -25,6 +25,30 @@ import android.database.sqlite.SQLiteOpenHelper
 import android.os.AsyncTask
 import java.sql.Date
 
+//data class FormSubmission(
+//    val id: String,
+//    val containerId: String,
+//    val shipmentTrackingId: String,
+//    val comment: String,
+//    val deviceId: String,
+//    val timestamp: Long
+//)
+
+data class User(
+    val id: Long,
+    val phone: String?,
+    val firstName: String?,
+    val lastName: String?,
+    val password: String?,
+    var token: String?
+)
+
+//data class ShipmentTracking(
+//    val id: Int,
+//    val deviceId: String
+//)
+
+
 class DatabaseHelper(context: Context?) : SQLiteOpenHelper(context, DATABASE_NAME, null, DATABASE_VERSION) {
 
     interface DatabaseHandler<T> {
@@ -69,15 +93,43 @@ class DatabaseHelper(context: Context?) : SQLiteOpenHelper(context, DATABASE_NAM
                     "charging INTEGER," +
                     "mock INTEGER)"
         )
+        db.execSQL(
+            "CREATE TABLE form_submissions (" +
+                    "id INTEGER PRIMARY KEY AUTOINCREMENT," +
+                    "shipmentTrackingId TEXT," +
+                    "eventDescription TEXT," +
+                    "eventTimeStamp INTEGER)"
+        )
+        db.execSQL(
+            "CREATE TABLE user (" +
+                    "id INTEGER PRIMARY KEY," +
+                    "phone TEXT," +
+                    "firstName TEXT," +
+                    "lastName TEXT," +
+                    "token TEXT,"+
+                    "password TEXT)"
+
+        )
+        db.execSQL(
+            "CREATE TABLE shipment_tracking (" +
+                    "id INTEGER PRIMARY KEY," +
+                    "deviceId TEXT NOT NULL)"
+        )
     }
 
     override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
         db.execSQL("DROP TABLE IF EXISTS position;")
+        db.execSQL("DROP TABLE IF EXISTS form_submissions;")
+        db.execSQL("DROP TABLE IF EXISTS user;")
+        db.execSQL("DROP TABLE IF EXISTS shipment_tracking;")
         onCreate(db)
     }
 
     override fun onDowngrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
         db.execSQL("DROP TABLE IF EXISTS position;")
+        db.execSQL("DROP TABLE IF EXISTS form_submissions;")
+        db.execSQL("DROP TABLE IF EXISTS user;")
+        db.execSQL("DROP TABLE IF EXISTS shipment_tracking;")
         onCreate(db)
     }
 
@@ -151,8 +203,135 @@ class DatabaseHelper(context: Context?) : SQLiteOpenHelper(context, DATABASE_NAM
         }.execute()
     }
 
+    fun insertFormSubmission(submission: FormSubmission) {
+        val values = ContentValues()
+        values.put("shipmentTrackingId", submission.shipmentTrackingId)
+        values.put("eventDescription", submission.eventDesciption)
+//        values.put("deviceId", submission.deviceId)
+        values.put("eventTimeStamp", submission.eventTimeStamp)
+        db.insertOrThrow("form_submissions", null, values)
+    }
+
+    fun insertFormSubmissionAsync(submission: FormSubmission, handler: DatabaseHandler<Unit?>) {
+        object : DatabaseAsyncTask<Unit>(handler) {
+            override fun executeMethod() {
+                insertFormSubmission(submission)
+            }
+        }.execute()
+    }
+
+    @SuppressLint("Range")
+    fun selectAllFormSubmissions(): List<FormSubmission> {
+        val submissions = mutableListOf<FormSubmission>()
+        db.rawQuery("SELECT * FROM form_submissions ORDER BY eventTimeStamp DESC", null).use { cursor ->
+            while (cursor.moveToNext()) {
+                submissions.add(
+                    FormSubmission(
+                        id = cursor.getLong(cursor.getColumnIndex("id")).toString(),
+                        eventDesciption = cursor.getString(cursor.getColumnIndex("eventDescription")),
+                        shipmentTrackingId = cursor.getString(cursor.getColumnIndex("shipmentTrackingId")),
+                        eventTimeStamp = cursor.getLong(cursor.getColumnIndex("eventTimeStamp"))
+                    )
+                )
+            }
+        }
+        return submissions
+    }
+
+    fun selectAllFormSubmissionsAsync(handler: DatabaseHandler<List<FormSubmission>?>) {
+        object : DatabaseAsyncTask<List<FormSubmission>>(handler) {
+            override fun executeMethod(): List<FormSubmission> {
+                return selectAllFormSubmissions()
+            }
+        }.execute()
+    }
+
+    fun deleteFormSubmission(id: Long) {
+        if (db.delete("form_submissions", "id = ?", arrayOf(id.toString())) != 1) {
+            throw SQLException()
+        }
+    }
+
+//    fun deleteFormSubmissionAsync(id: Long, handler: Any) {
+//        object : DatabaseAsyncTask<Unit>(handler) {
+//            override fun executeMethod() {
+//                deleteFormSubmission(id)
+//            }
+//        }.execute()
+//    }
+
+
+    // User methods
+    fun insertUser(user: User) {
+        val values = ContentValues()
+        values.put("id", user.id)
+        values.put("phone", user.phone)
+        values.put("firstName", user.firstName)
+        values.put("lastName", user.lastName)
+        values.put("password", user.password)
+        values.put("token", user.token)
+        db.insertWithOnConflict("user", null, values, SQLiteDatabase.CONFLICT_REPLACE)
+    }
+
+    fun insertUserAsync(user: User, handler: DatabaseHandler<Unit?>) { // Updated handler type
+        object : DatabaseAsyncTask<Unit?>(handler) {
+            override fun executeMethod(): Unit? {
+                insertUser(user)
+                return null
+            }
+        }.execute()
+    }
+
+    @SuppressLint("Range")
+    fun selectUser(): User? {
+        db.rawQuery("SELECT * FROM user LIMIT 1", null).use { cursor ->
+            if (cursor.count > 0) {
+                cursor.moveToFirst()
+                return User(
+                    id = cursor.getLong(cursor.getColumnIndex("id")),
+                    phone = cursor.getString(cursor.getColumnIndex("phone")),
+                    firstName = cursor.getString(cursor.getColumnIndex("firstName")),
+                    lastName = cursor.getString(cursor.getColumnIndex("lastName")),
+                    password = cursor.getString(cursor.getColumnIndex("password")),
+                    token = cursor.getString(cursor.getColumnIndex("token"))
+                )
+            }
+        }
+        return null
+    }
+
+    fun selectUserAsync(handler: DatabaseHandler<User?>) {
+        object : DatabaseAsyncTask<User?>(handler) {
+            override fun executeMethod(): User? {
+                return selectUser()
+            }
+        }.execute()
+    }
+
+    fun clearUserData() {
+        db.delete("user", null, null)
+    }
+
+    fun clearUserDataAsync(handler: DatabaseHandler<Unit?>) {
+        object : DatabaseAsyncTask<Unit?>(handler) {
+            override fun executeMethod(): Unit? {
+                clearUserData()
+                return null
+            }
+        }.execute()
+    }
+
+    fun clearUserDataSync(): Boolean {
+        return try {
+            clearUserData()
+            true
+        } catch (e: Exception) {
+            false
+        }
+    }
+
     companion object {
-        const val DATABASE_VERSION = 4
+        const val DATABASE_VERSION = 6
         const val DATABASE_NAME = "traccar.db"
     }
 

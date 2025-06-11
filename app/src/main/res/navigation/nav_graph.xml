@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/nav_graph"
+    app:startDestination="@id/historyFragment">
+
+    <fragment
+        android:id="@+id/historyFragment"
+        android:name="org.traccar.client.HistoryFragment"
+        android:label="History">
+        <action
+            android:id="@+id/action_historyFragment_to_submissionFormFragment"
+            app:destination="@id/submissionFormFragment"
+            app:popUpTo="@id/historyFragment"
+            app:popUpToInclusive="false"
+            />
+    </fragment>
+
+    <fragment
+        android:id="@+id/submissionFormFragment"
+        android:name="org.traccar.client.ShipmentFormFragment"
+        android:label="Submission Form"
+
+        >
+      <action
+          android:id="@+id/action_submissionFormFragment_to_submissionFormFragment"
+          app:destination="@+id/submissionFormFragment"
+          app:popUpTo="@id/historyFragment"
+          app:popUpToInclusive="false"
+          />
+        </fragment>
+</navigation>
