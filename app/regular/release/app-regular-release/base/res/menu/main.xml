@@ -1,0 +1,18 @@
+
+Û
+;
+android*http://schemas.android.com/apk/res/android9
+4
+app'http://schemas.android.com/apk/res-auto9menu*²
+©item"O
+'http://schemas.android.com/apk/res-autoshowAsActionifRoom"	(ß‡ø2:8"q
+*http://schemas.android.com/apk/res/androidtitle@string/menu_status"	(áƒ„2
+ò€Èøstring/menu_status0"]
+*http://schemas.android.com/apk/res/androidid@+id/status"	(Ğ„2
+Çƒ¤ø	id/status0	%*ª
+¡item"O
+'http://schemas.android.com/apk/res-autoshowAsActionifRoom"(ß‡ø2:8"m
+*http://schemas.android.com/apk/res/androidtitle@string/menu_info"(áƒ„2
+ğ€Èøstring/menu_info0"Y
+*http://schemas.android.com/apk/res/androidid	@+id/info"(Ğ„2
+î¤øid/info0%9
