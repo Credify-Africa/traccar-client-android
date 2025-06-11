@@ -1,6 +1,5 @@
 package org.traccar.client
 
-import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.POST
@@ -14,7 +13,7 @@ interface SyncApiService {
     suspend fun sendFormData(@Body submission: FormSubmission)
 
     @POST("driver-login")
-    suspend fun login(@Body request: LoginRequest): LoginResponse
+    suspend fun login(@Body request: LoginRequest): retrofit2.Response<LoginResponse>
 
     @POST("verify-email")
     suspend fun verifyCode(@Body request: CodeVerificationRequest): CodeVerificationResponse

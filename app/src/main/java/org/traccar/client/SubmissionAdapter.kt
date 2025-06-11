@@ -1,14 +1,5 @@
 package org.traccar.client
 
-import android.view.LayoutInflater
-import android.view.View
-import android.view.ViewGroup
-import android.widget.TextView
-import androidx.recyclerview.widget.RecyclerView
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
-
 //class SubmissionAdapter(private val submissions: List<FormSubmission>) :
 //    RecyclerView.Adapter<SubmissionAdapter.ViewHolder>() {
 //
