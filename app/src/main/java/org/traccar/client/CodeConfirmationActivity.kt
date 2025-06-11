@@ -13,10 +13,7 @@ import okhttp3.OkHttpClient
 import org.traccar.client.DatabaseHelper.DatabaseHandler
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
-import android.os.Parcel
-import android.os.Parcelable
 import android.util.Log
-import com.google.gson.annotations.SerializedName
 
 class CodeConfirmationActivity : AppCompatActivity() {
     private lateinit var apiService: SyncApiService
