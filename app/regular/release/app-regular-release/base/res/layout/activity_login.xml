@@ -1,0 +1,58 @@
+
+Ê
+;
+android*http://schemas.android.com/apk/res/androidLinearLayout"T
+*http://schemas.android.com/apk/res/android
+background#FFFFFF"(Ô„2:Pÿÿÿÿ"L
+*http://schemas.android.com/apk/res/androidgravitycenter"(¯„2:8"K
+*http://schemas.android.com/apk/res/androidpadding16dp"(Õ„2:h "`
+*http://schemas.android.com/apk/res/androidlayout_widthmatch_parent"(ô„2:0ÿÿÿÿÿÿÿÿÿ"a
+*http://schemas.android.com/apk/res/androidlayout_heightmatch_parent"(õ„2:0ÿÿÿÿÿÿÿÿÿ"R
+*http://schemas.android.com/apk/res/androidorientationvertical"(Ä„2:0*„
+û	ImageView"W
+*http://schemas.android.com/apk/res/androidlayout_marginBottom16dp"(ú„2:h "S
+*http://schemas.android.com/apk/res/androidcontentDescriptionCredify Logo(ó„„"{
+*http://schemas.android.com/apk/res/androidsrc@drawable/ic_credify_logo"(™‚„2$
+"” ødrawable/ic_credify_logo0"`
+*http://schemas.android.com/apk/res/androidlayout_widthwrap_content"(ô„2:0şÿÿÿÿÿÿÿÿ"a
+*http://schemas.android.com/apk/res/androidlayout_heightwrap_content"(õ„2:0şÿÿÿÿÿÿÿÿ3*è
+ßTextView"`
+*http://schemas.android.com/apk/res/androidlayout_widthwrap_content"(ô„2:0şÿÿÿÿÿÿÿÿ"a
+*http://schemas.android.com/apk/res/androidlayout_heightwrap_content"(õ„2:0şÿÿÿÿÿÿÿÿ"L
+*http://schemas.android.com/apk/res/androidtextSize20sp"(•„2:h‚("S
+*http://schemas.android.com/apk/res/android	textColor#333333"(˜„2:P³æÌù"T
+*http://schemas.android.com/apk/res/androidlayout_marginTop16dp"(ø„2:h "G
+*http://schemas.android.com/apk/res/androidtextCredify Driver(Ï‚„"L
+*http://schemas.android.com/apk/res/android	textStylebold"(—„2:8$*„
+ûEditText"Š
+*http://schemas.android.com/apk/res/android
+background@drawable/edittext_background"$(Ô„2(
+&† ødrawable/edittext_background0"E
+*http://schemas.android.com/apk/res/androidhintPhone Number(Ğ‚„"K
+*http://schemas.android.com/apk/res/androidpadding12dp"$(Õ„2:h"`
+*http://schemas.android.com/apk/res/androidlayout_widthmatch_parent"$(ô„2:0ÿÿÿÿÿÿÿÿÿ"a
+*http://schemas.android.com/apk/res/androidlayout_heightwrap_content"$(õ„2:0şÿÿÿÿÿÿÿÿ"W
+*http://schemas.android.com/apk/res/androidtextColorHint#757575"$(š„2:PõêÕû"Ÿ
+*http://schemas.android.com/apk/res/android	textColor(@color/design_default_color_on_secondary"$(˜„23
+1È€˜ø'color/design_default_color_on_secondary0"T
+*http://schemas.android.com/apk/res/androidlayout_marginTop24dp"$(ø„2:h0"M
+*http://schemas.android.com/apk/res/android	inputTypephone"$( „„2:8"i
+*http://schemas.android.com/apk/res/androidid@+id/phone_number"$(Ğ„2
+ñ‚¤øid/phone_number0$+*¢
+™TextView"`
+*http://schemas.android.com/apk/res/androidlayout_widthwrap_content"9(ô„2:0şÿÿÿÿÿÿÿÿ"a
+*http://schemas.android.com/apk/res/androidlayout_heightwrap_content"9(õ„2:0şÿÿÿÿÿÿÿÿ"S
+*http://schemas.android.com/apk/res/android	textColor#1E88E5"9(˜„2:På‘úø"S
+*http://schemas.android.com/apk/res/androidlayout_marginTop8dp"9(ø„2:h"S
+*http://schemas.android.com/apk/res/androidlayout_gravityend"9(³„2:8…€€"I
+*http://schemas.android.com/apk/res/androidtextForgot password?(Ï‚„9'*Ô
+ËButton"K
+*http://schemas.android.com/apk/res/androidpadding12dp"C(Õ„2:h"`
+*http://schemas.android.com/apk/res/androidlayout_widthmatch_parent"C(ô„2:0ÿÿÿÿÿÿÿÿÿ"a
+*http://schemas.android.com/apk/res/androidlayout_heightwrap_content"C(õ„2:0şÿÿÿÿÿÿÿÿ"X
+*http://schemas.android.com/apk/res/androidbackgroundTint#1E88E5"C(ëˆ„2:På‘úø"S
+*http://schemas.android.com/apk/res/android	textColor#FFFFFF"C(˜„2:Pÿÿÿÿ"T
+*http://schemas.android.com/apk/res/androidlayout_marginTop24dp"C(ø„2:h0"i
+*http://schemas.android.com/apk/res/androidid@+id/login_button"C(Ğ„2
+‚¤øid/login_button0"?
+*http://schemas.android.com/apk/res/androidtextLog in(Ï‚„C'
