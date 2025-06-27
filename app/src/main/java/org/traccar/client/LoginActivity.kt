@@ -51,9 +51,10 @@ private lateinit var apiService: SyncApiService
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_login)
+        dbHelper = DatabaseHelper(this)
         initializePreferences()
         // Initialize dbHelper here, after the activity context is available
-        dbHelper = DatabaseHelper(this)
+
         val preferences = PreferenceManager.getDefaultSharedPreferences(this)
         val logging = HttpLoggingInterceptor().apply {
             level = HttpLoggingInterceptor.Level.BODY // LOGS FULL REQUEST + RESPONSE
@@ -65,9 +66,11 @@ private lateinit var apiService: SyncApiService
                 val request = chain.request()
                 val response = chain.proceed(request)
                 val authHeader = response.header("Set-Cookie")
+                Log.e("LoginActivity", "Auth Header: $authHeader")
                 if (authHeader != null && authHeader.startsWith("Authorization=")) {
                     authToken = authHeader
                 }
+                Log.e("LoginActivity", "Auth Header: $authToken")
                 response
             }
             .build()
@@ -115,9 +118,10 @@ private lateinit var apiService: SyncApiService
                         if (apiResponse != null) {
                             Log.d("LoginActivity", "API Response: status=${apiResponse.status}, message=${apiResponse.message}, data=${apiResponse.user}")
 
-                            if (apiResponse.user != null) {
+                            if (apiResponse.user != null && httpStatusCode == 200) {
 
                                 if (authToken != null) {
+                                    Log.d("LoginActivity", "Auth Token: $authToken")
                                     PreferenceManager.getDefaultSharedPreferences(this@LoginActivity)
                                         .edit()
                                         .putString("auth_token", authToken)
@@ -133,10 +137,12 @@ private lateinit var apiService: SyncApiService
                                     ), object : DatabaseHandler<Unit?> {
                                         override fun onComplete(success: Boolean, result: Unit?) {
                                             if (success) {
-                                                val intent = Intent(this@LoginActivity, MainActivity::class.java)
-                                                intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                                                Log.e("LoginActivity", "User data saved successfully")
+                                                val intent = Intent(this@LoginActivity, CodeConfirmationActivity::class.java)
+//                                                intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
                                                 startActivity(intent)
                                                 finish()
+                                                Log.e("LoginActivity", "Navigating to CodeConfirmationActivity")
                                             } else {
                                                 runOnUiThread {
                                                     Toast.makeText(this@LoginActivity, "Failed to save user data", Toast.LENGTH_SHORT).show()
@@ -194,36 +200,39 @@ private lateinit var apiService: SyncApiService
         // Set status to true to enable TrackingService
         editor.putBoolean("status", true)
 
-        // Set device ID (random 6-digit number)
-        if (!sharedPreferences.contains("id")) {
-            val id = (Random().nextInt(900000) + 100000).toString()
-            editor.putString("id", id)
-
-
-
-        }
-
-        // Set server URL
-        editor.putString("url", "https://tracking.credify.africa") // Replace with your server URL
-
-        // Set accuracy
-        editor.putString("accuracy", "medium")
-
-        // Set interval
-        editor.putString("interval", "300")
-
-        // Set distance
-        editor.putString("distance", "0")
-
-        // Set angle
-        editor.putString("angle", "0")
-
-        // Set buffer
-        editor.putBoolean("buffer", true)
-
-        // Set wakelock
-        editor.putBoolean("wakelock", true)
-
-        editor.apply()
+        // Check if device ID exists in DB, otherwise generate and store
+        dbHelper.selectDeviceIdAsync(object : DatabaseHandler<String?> {
+            override fun onComplete(success: Boolean, result: String?) {
+                if (success && result != null) {
+                    // Device ID exists in DB, ensure it's in preferences
+                    if (!sharedPreferences.contains(MainFragment.KEY_DEVICE)) {
+                        editor.putString(MainFragment.KEY_DEVICE, result)
+                    }
+                } else {
+                    // No device ID in DB, check preferences or generate new
+                    val deviceId = sharedPreferences.getString(MainFragment.KEY_DEVICE, null) ?: run {
+                        val newDeviceId = (Random().nextInt(900000) + 100000).toString()
+                        dbHelper.insertDeviceIdAsync(newDeviceId, object : DatabaseHandler<Unit?> {
+                            override fun onComplete(success: Boolean, result: Unit?) {
+                                if (!success) {
+                                    Log.e("LoginActivity", "Failed to save device ID to database")
+                                }
+                            }
+                        })
+                        newDeviceId
+                    }
+                    editor.putString(MainFragment.KEY_DEVICE, deviceId)
+                }
+                // Set other preferences
+                editor.putString("url", "https://tracking.credify.africa")
+                editor.putString("accuracy", "medium")
+                editor.putString("interval", "300")
+                editor.putString("distance", "0")
+                editor.putString("angle", "0")
+                editor.putBoolean("buffer", true)
+                editor.putBoolean("wakelock", true)
+                editor.apply()
+            }
+        })
     }
 }

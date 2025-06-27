@@ -1,0 +1,19 @@
+
+­
+;
+android*http://schemas.android.com/apk/res/androidBmenu*¸
+¯item">
+*http://schemas.android.com/apk/res/androidtitleHome(áƒ„"v
+*http://schemas.android.com/apk/res/androidicon@drawable/ic_home_icon"(‚€„2!
+• ødrawable/ic_home_icon0"o
+*http://schemas.android.com/apk/res/androidid@+id/historyFragment"(Ğ„2
+á¤øid/historyFragment0 *¬
+£item"@
+*http://schemas.android.com/apk/res/androidtitleLogout(áƒ„"z
+*http://schemas.android.com/apk/res/androidicon@drawable/ic_logout_icon"
+(‚€„2#
+!˜ ødrawable/ic_logout_icon0"]
+*http://schemas.android.com/apk/res/androidid@+id/logout"
+(Ğ„2
+‚‚¤ø	id/logout0
+"B

@@ -16,7 +16,7 @@ interface SyncApiService {
     suspend fun login(@Body request: LoginRequest): retrofit2.Response<LoginResponse>
 
     @POST("verify-email")
-    suspend fun verifyCode(@Body request: CodeVerificationRequest): CodeVerificationResponse
+    suspend fun verifyCode(@Body request: CodeVerificationRequest): retrofit2.Response<CodeVerificationResponse>
 
     @GET("shipment-tracking/{userId}")
     suspend fun getShipmentHistory(@Path("userId") userId: String): ShipmentResponse
@@ -38,7 +38,7 @@ data class LoginResponse(
     val stack: String? = null
 )
 
-data class CodeVerificationRequest(val userId: String, val code: String) // Aligned userId type with getShipmentHistory
+data class CodeVerificationRequest(val userId: Int, val code: String) // Aligned userId type with getShipmentHistory
 
 data class CodeVerificationResponse(
     val status: Int,

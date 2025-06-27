@@ -63,6 +63,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:hint="Add a comment"
+                    android:textColor="@color/design_default_color_on_secondary"
                     android:inputType="textMultiLine"
                     android:minLines="3"
                     android:background="@drawable/edittext_background"
