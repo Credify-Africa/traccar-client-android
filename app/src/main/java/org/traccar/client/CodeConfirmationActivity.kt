@@ -13,10 +13,8 @@ import okhttp3.OkHttpClient
 import org.traccar.client.DatabaseHelper.DatabaseHandler
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
-import android.os.Parcel
-import android.os.Parcelable
 import android.util.Log
-import com.google.gson.annotations.SerializedName
+import android.widget.ProgressBar
 
 class CodeConfirmationActivity : AppCompatActivity() {
     private lateinit var apiService: SyncApiService
@@ -61,11 +59,11 @@ class CodeConfirmationActivity : AppCompatActivity() {
 
         dbHelper = DatabaseHelper(this)
 
-        val userData = intent.getParcelableExtra("USER_DATA") as UserData? ?: run {
-            Toast.makeText(this, "User data not provided", Toast.LENGTH_SHORT).show()
-            finish()
-            return
-        }
+//        val userData = intent.getParcelableExtra("USER_DATA") as UserData? ?: run {
+//            Toast.makeText(this, "User data not provided", Toast.LENGTH_SHORT).show()
+//            finish()
+//            return
+//        }
 
         // Set up OkHttpClient with interceptor to capture Authorization header
         val client = OkHttpClient.Builder()
@@ -114,65 +112,181 @@ class CodeConfirmationActivity : AppCompatActivity() {
 
         val codeInput = findViewById<EditText>(R.id.verification_code)
         val verifyButton = findViewById<Button>(R.id.verify_button)
+        val verifyProgress = findViewById<ProgressBar>(R.id.verify_progress)
 
-        verifyButton.setOnClickListener {
-            verifyButton.isEnabled = false
-            val code = codeInput.text.toString().trim()
+        dbHelper.selectUserAsync(object : DatabaseHelper.DatabaseHandler<User?> {
+            override fun onComplete(success: Boolean, result: User?) {
+                if (!success || result == null) {
+                    runOnUiThread {
+                        Toast.makeText(this@CodeConfirmationActivity, "User data not found", Toast.LENGTH_SHORT).show()
+                        finish()
+                    }
+                    return
+                }
 
-            if (code.isEmpty()) {
-                Toast.makeText(this, "Please enter the verification code", Toast.LENGTH_SHORT).show()
-                verifyButton.isEnabled = true
-                return@setOnClickListener
-            }
+                val user = result
 
-            CoroutineScope(Dispatchers.IO).launch {
-                try {
-                    val response = apiService.verifyCode(CodeVerificationRequest(userData.id.toString(), code))
-                    if (response.status == 200) {
-                        if (authToken != null) {
-                            dbHelper.insertUserAsync(User(
-                                id = userData.id,
-                                phone = userData.phone,
-                                firstName = userData.firstName,
-                                lastName = userData.lastName,
-                                password = userData.password,
-                                token = authToken
-                            ), object : DatabaseHandler<Unit?> {
-                                override fun onComplete(success: Boolean, result: Unit?) {
-                                    if (success) {
-                                        val intent = Intent(this@CodeConfirmationActivity, MainActivity::class.java)
-                                        intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-                                        startActivity(intent)
-                                        finish()
-                                    } else {
-                                        runOnUiThread {
-                                            Toast.makeText(this@CodeConfirmationActivity, "Failed to save user data", Toast.LENGTH_SHORT).show()
-                                            verifyButton.isEnabled = true
-                                        }
-                                    }
+                verifyButton.setOnClickListener {
+                    verifyButton.isEnabled = false
+                    verifyProgress.visibility = android.view.View.VISIBLE
+                    val code = codeInput.text.toString().trim()
+
+                    if (code.isEmpty()) {
+                        Toast.makeText(this@CodeConfirmationActivity, "Please enter the verification code", Toast.LENGTH_SHORT).show()
+                        verifyButton.isEnabled = true
+                        return@setOnClickListener
+                    }
+
+                    CoroutineScope(Dispatchers.IO).launch {
+                        try {
+                            val confirmationResponse = apiService.verifyCode(CodeVerificationRequest(user.id.toInt(), code))
+                            val httpStatusCode = confirmationResponse.code()
+
+                            if (confirmationResponse.isSuccessful) {
+                                val intent = Intent(this@CodeConfirmationActivity, MainActivity::class.java)
+                                intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                                startActivity(intent)
+                                finish()
+
+//                                val responseBody = confirmationResponse.body()
+//                                if (responseBody != null && responseBody.success) {
+//                                    // Update user token in database if received
+//                                    if (authToken != null) {
+//                                        dbHelper.insertUserAsync(
+//                                            User(
+//                                                id = user.id,
+//                                                phone = user.phone,
+//                                                firstName = user.firstName,
+//                                                lastName = user.lastName,
+//                                                password = user.password,
+//                                                token = authToken
+//                                            ),
+//                                            object : DatabaseHelper.DatabaseHandler<Unit?> {
+//                                                override fun onComplete(success: Boolean, result: Unit?) {
+//                                                    if (success) {
+//                                                        runOnUiThread {
+//                                                            val intent = Intent(this@CodeConfirmationActivity, MainActivity::class.java)
+//                                                            intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+//                                                            startActivity(intent)
+//                                                            finish()
+//                                                        }
+//                                                    } else {
+//                                                        runOnUiThread {
+//                                                            Toast.makeText(this@CodeConfirmationActivity, "Failed to save user data", Toast.LENGTH_SHORT).show()
+//                                                            verifyButton.isEnabled = true
+//                                                        }
+//                                                    }
+//                                                }
+//                                            }
+//                                        )
+//                                    } else {
+//                                        runOnUiThread {
+//                                            Toast.makeText(this@CodeConfirmationActivity, "Token not received from server", Toast.LENGTH_SHORT).show()
+//                                            verifyButton.isEnabled = true
+//                                        }
+//                                    }
+//                                } else {
+//                                    Log.e("CodeConfirmation", "Verification failed: ${responseBody?.message ?: "No response body"}")
+//                                    runOnUiThread {
+//                                        Toast.makeText(this@CodeConfirmationActivity, "Verification failed: ${responseBody?.message ?: "Empty response"}", Toast.LENGTH_SHORT).show()
+//                                        verifyButton.isEnabled = true
+//                                    }
+//                                }
+                            } else {
+                                val errorBody = confirmationResponse.errorBody()?.string()
+                                Log.e("CodeConfirmation", "HTTP Error: $httpStatusCode, Message: $errorBody")
+                                runOnUiThread {
+                                    Toast.makeText(this@CodeConfirmationActivity, "Verification failed: Server error ($httpStatusCode)", Toast.LENGTH_SHORT).show()
+                                    verifyButton.isEnabled = true
+                                    verifyProgress.visibility = android.view.View.GONE
                                 }
-                            })
-                        } else {
+                            }
+                        } catch (e: Exception) {
+                            Log.e("CodeConfirmation", "Exception: ${e.message}", e)
                             runOnUiThread {
-                                Toast.makeText(this@CodeConfirmationActivity, "Token not received from server", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(this@CodeConfirmationActivity, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
                                 verifyButton.isEnabled = true
+                                verifyProgress.visibility = android.view.View.GONE
                             }
                         }
-                    } else {
-                        Log.e("CodeConfirmation","${response.message}")
-                        runOnUiThread {
-                            Toast.makeText(this@CodeConfirmationActivity, "Verification failed: ${response.message}", Toast.LENGTH_SHORT).show()
-                            verifyButton.isEnabled = true
-                        }
-                    }
-                } catch (e: Exception) {
-                    Log.e("CodeConfirmation", "${e}")
-                    runOnUiThread {
-                        Toast.makeText(this@CodeConfirmationActivity, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
-                        verifyButton.isEnabled = true
                     }
                 }
             }
-        }
+        })
+
+//        verifyButton.setOnClickListener {
+//            verifyButton.isEnabled = false
+//            val code = codeInput.text.toString().trim()
+//
+//            if (code.isEmpty()) {
+//                Toast.makeText(this, "Please enter the verification code", Toast.LENGTH_SHORT).show()
+//                verifyButton.isEnabled = true
+//                return@setOnClickListener
+//            }
+//
+//            CoroutineScope(Dispatchers.IO).launch {
+//                try {
+//                    val confirmationResponse: retrofit2.Response<CodeVerificationResponse> = apiService.verifyCode(CodeVerificationRequest(userData.id.toString(), code))
+//                    val httpStatusCode = confirmationResponse.code()
+//
+//                    if(confirmationResponse.isSuccessful) {
+//                        val intent = Intent(this@CodeConfirmationActivity, MainActivity::class.java)
+//                        intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+//                        startActivity(intent)
+//                        finish()
+//                    } else {
+//                        Log.e("CodeConfirmation", "HTTP Error: $httpStatusCode, Message: ${confirmationResponse.message()}")
+//                        runOnUiThread {
+//                            Toast.makeText(this@CodeConfirmationActivity, "Verification failed: ${confirmationResponse.message()}", Toast.LENGTH_SHORT).show()
+//                            verifyButton.isEnabled = true
+//                        }
+//                    }
+//
+////                    if (response.status == 200) {
+////                        if (authToken != null) {
+////                            dbHelper.insertUserAsync(User(
+////                                id = userData.id,
+////                                phone = userData.phone,
+////                                firstName = userData.firstName,
+////                                lastName = userData.lastName,
+////                                password = userData.password,
+////                                token = authToken
+////                            ), object : DatabaseHandler<Unit?> {
+////                                override fun onComplete(success: Boolean, result: Unit?) {
+////                                    if (success) {
+////                                        val intent = Intent(this@CodeConfirmationActivity, MainActivity::class.java)
+////                                        intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+////                                        startActivity(intent)
+////                                        finish()
+////                                    } else {
+////                                        runOnUiThread {
+////                                            Toast.makeText(this@CodeConfirmationActivity, "Failed to save user data", Toast.LENGTH_SHORT).show()
+////                                            verifyButton.isEnabled = true
+////                                        }
+////                                    }
+////                                }
+////                            })
+////                        } else {
+////                            runOnUiThread {
+////                                Toast.makeText(this@CodeConfirmationActivity, "Token not received from server", Toast.LENGTH_SHORT).show()
+////                                verifyButton.isEnabled = true
+////                            }
+////                        }
+////                    } else {
+////                        Log.e("CodeConfirmation","${response.message}")
+////                        runOnUiThread {
+////                            Toast.makeText(this@CodeConfirmationActivity, "Verification failed: ${response.message}", Toast.LENGTH_SHORT).show()
+////                            verifyButton.isEnabled = true
+////                        }
+////                    }
+//                } catch (e: Exception) {
+//                    Log.e("CodeConfirmation", "${e}")
+//                    runOnUiThread {
+//                        Toast.makeText(this@CodeConfirmationActivity, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
+//                        verifyButton.isEnabled = true
+//                    }
+//                }
+//            }
+//        }
     }
 }

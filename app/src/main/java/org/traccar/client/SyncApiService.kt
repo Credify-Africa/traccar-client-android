@@ -1,6 +1,5 @@
 package org.traccar.client
 
-import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.POST
@@ -14,19 +13,24 @@ interface SyncApiService {
     suspend fun sendFormData(@Body submission: FormSubmission)
 
     @POST("driver-login")
-    suspend fun login(@Body request: LoginRequest): LoginResponse
+    suspend fun login(@Body request: LoginRequest): retrofit2.Response<LoginResponse>
 
     @POST("verify-email")
-    suspend fun verifyCode(@Body request: CodeVerificationRequest): CodeVerificationResponse
+    suspend fun verifyCode(@Body request: CodeVerificationRequest): retrofit2.Response<CodeVerificationResponse>
 
-    @GET("shipment-tracking/{userId}/")
-    suspend fun getShipmentHistory(@Path("userId") userId: String): List<ShipmentTracking>
+    @GET("shipment-tracking/{userId}")
+    suspend fun getShipmentHistory(@Path("userId") userId: String): ShipmentResponse
 }
+
+data class ShipmentResponse(
+    val data: List<ShipmentTracking>,
+    val message: String
+)
 
 data class LoginRequest(val phone: String, val deviceId: String)
 
 data class LoginResponse(
-    val data: UserData?,
+    val user: UserData?,
     val message: String,
     val requiresPasswordChange: Boolean? = null,
     val status: Int? = null,
@@ -34,7 +38,7 @@ data class LoginResponse(
     val stack: String? = null
 )
 
-data class CodeVerificationRequest(val userId: String, val code: String) // Aligned userId type with getShipmentHistory
+data class CodeVerificationRequest(val userId: Int, val code: String) // Aligned userId type with getShipmentHistory
 
 data class CodeVerificationResponse(
     val status: Int,
