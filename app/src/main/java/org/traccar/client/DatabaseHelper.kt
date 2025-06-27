@@ -111,6 +111,11 @@ class DatabaseHelper(context: Context?) : SQLiteOpenHelper(context, DATABASE_NAM
 
         )
         db.execSQL(
+            "CREATE TABLE device (" +
+                    "id INTEGER PRIMARY KEY AUTOINCREMENT," +
+                    "deviceId TEXT NOT NULL UNIQUE)"
+        )
+        db.execSQL(
             "CREATE TABLE shipment_tracking (" +
                     "id INTEGER PRIMARY KEY," +
                     "deviceId TEXT NOT NULL)"
@@ -122,6 +127,7 @@ class DatabaseHelper(context: Context?) : SQLiteOpenHelper(context, DATABASE_NAM
         db.execSQL("DROP TABLE IF EXISTS form_submissions;")
         db.execSQL("DROP TABLE IF EXISTS user;")
         db.execSQL("DROP TABLE IF EXISTS shipment_tracking;")
+        db.execSQL("DROP TABLE IF EXISTS device;")
         onCreate(db)
     }
 
@@ -130,6 +136,7 @@ class DatabaseHelper(context: Context?) : SQLiteOpenHelper(context, DATABASE_NAM
         db.execSQL("DROP TABLE IF EXISTS form_submissions;")
         db.execSQL("DROP TABLE IF EXISTS user;")
         db.execSQL("DROP TABLE IF EXISTS shipment_tracking;")
+        db.execSQL("DROP TABLE IF EXISTS device;")
         onCreate(db)
     }
 
@@ -330,8 +337,42 @@ class DatabaseHelper(context: Context?) : SQLiteOpenHelper(context, DATABASE_NAM
         }
     }
 
+    // Device ID methods
+    fun insertDeviceId(deviceId: String) {
+        val values = ContentValues()
+        values.put("deviceId", deviceId)
+        db.insertWithOnConflict("device", null, values, SQLiteDatabase.CONFLICT_REPLACE)
+    }
+
+    fun insertDeviceIdAsync(deviceId: String, handler: DatabaseHandler<Unit?>) {
+        object : DatabaseAsyncTask<Unit?>(handler) {
+            override fun executeMethod(): Unit? {
+                insertDeviceId(deviceId)
+                return null
+            }
+        }.execute()
+    }
+
+    @SuppressLint("Range")
+    fun selectDeviceId(): String? {
+        db.rawQuery("SELECT deviceId FROM device LIMIT 1", null).use { cursor ->
+            if (cursor.moveToFirst()) {
+                return cursor.getString(cursor.getColumnIndex("deviceId"))
+            }
+        }
+        return null
+    }
+
+    fun selectDeviceIdAsync(handler: DatabaseHandler<String?>) {
+        object : DatabaseAsyncTask<String?>(handler) {
+            override fun executeMethod(): String? {
+                return selectDeviceId()
+            }
+        }.execute()
+    }
+
     companion object {
-        const val DATABASE_VERSION = 6
+        const val DATABASE_VERSION = 7
         const val DATABASE_NAME = "traccar.db"
     }
 

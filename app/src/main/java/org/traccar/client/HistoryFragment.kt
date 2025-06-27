@@ -321,8 +321,8 @@ class HistoryFragment : Fragment() {
 
         override fun onBindViewHolder(holder: SubmissionViewHolder, position: Int) {
             val submission = submissions[position]
-            holder.containerId.text = submission.id.toString()
-            holder.comment.text = submission.deviceId
+            holder.containerId.text = "Shipment Id: ${submission.id}"
+            holder.comment.text = "Device Id: ${submission.deviceId}"
 
             Log.d("History", "On  Bind ViewHolder: ${holder.containerId.text}, ${holder.comment.text}, ${submission}")
         }
