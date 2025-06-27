@@ -5,6 +5,7 @@ import android.os.Bundle
 import android.util.Log
 import android.widget.Button
 import android.widget.EditText
+import android.widget.ProgressBar
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
@@ -85,6 +86,7 @@ private lateinit var apiService: SyncApiService
 
         val usernameInput = findViewById<EditText>(R.id.phone_number)
         val loginButton = findViewById<Button>(R.id.login_button)
+        val loginProgress = findViewById<ProgressBar>(R.id.login_progress)
 
         if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION) != android.content.pm.PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(this, arrayOf(android.Manifest.permission.ACCESS_FINE_LOCATION, android.Manifest.permission.ACCESS_BACKGROUND_LOCATION), 1)
@@ -92,6 +94,7 @@ private lateinit var apiService: SyncApiService
 
         loginButton.setOnClickListener {
             loginButton.isEnabled = false
+            loginProgress.visibility = android.view.View.VISIBLE
             val phoneNumber = usernameInput.text.toString().trim()
 
             if (phoneNumber.isEmpty()) {
@@ -164,6 +167,7 @@ private lateinit var apiService: SyncApiService
                                 runOnUiThread {
                                     Toast.makeText(this@LoginActivity, "Login failed: ${apiResponse.message}", Toast.LENGTH_SHORT).show()
                                     loginButton.isEnabled = true
+                                    loginProgress.visibility = android.view.View.GONE
                                 }
                             }
                         } else {
@@ -172,6 +176,7 @@ private lateinit var apiService: SyncApiService
                             runOnUiThread {
                                 Toast.makeText(this@LoginActivity, "Login failed: Empty response", Toast.LENGTH_SHORT).show()
                                 loginButton.isEnabled = true
+                                loginProgress.visibility = android.view.View.GONE
                             }
                         }
                     } else {
@@ -181,6 +186,7 @@ private lateinit var apiService: SyncApiService
                         runOnUiThread {
                             Toast.makeText(this@LoginActivity, "Login failed: Server error ($httpStatusCode)", Toast.LENGTH_SHORT).show()
                             loginButton.isEnabled = true
+                            loginProgress.visibility = android.view.View.GONE
                         }
                     }
                 } catch (e: Exception) {
@@ -188,6 +194,7 @@ private lateinit var apiService: SyncApiService
                     runOnUiThread {
                         Toast.makeText(this@LoginActivity, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
                         loginButton.isEnabled = true
+                        loginProgress.visibility = android.view.View.GONE
                     }
                 }
             }

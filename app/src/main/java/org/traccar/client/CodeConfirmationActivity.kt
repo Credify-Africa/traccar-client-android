@@ -14,6 +14,7 @@ import org.traccar.client.DatabaseHelper.DatabaseHandler
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import android.util.Log
+import android.widget.ProgressBar
 
 class CodeConfirmationActivity : AppCompatActivity() {
     private lateinit var apiService: SyncApiService
@@ -111,6 +112,7 @@ class CodeConfirmationActivity : AppCompatActivity() {
 
         val codeInput = findViewById<EditText>(R.id.verification_code)
         val verifyButton = findViewById<Button>(R.id.verify_button)
+        val verifyProgress = findViewById<ProgressBar>(R.id.verify_progress)
 
         dbHelper.selectUserAsync(object : DatabaseHelper.DatabaseHandler<User?> {
             override fun onComplete(success: Boolean, result: User?) {
@@ -126,6 +128,7 @@ class CodeConfirmationActivity : AppCompatActivity() {
 
                 verifyButton.setOnClickListener {
                     verifyButton.isEnabled = false
+                    verifyProgress.visibility = android.view.View.VISIBLE
                     val code = codeInput.text.toString().trim()
 
                     if (code.isEmpty()) {
@@ -195,6 +198,7 @@ class CodeConfirmationActivity : AppCompatActivity() {
                                 runOnUiThread {
                                     Toast.makeText(this@CodeConfirmationActivity, "Verification failed: Server error ($httpStatusCode)", Toast.LENGTH_SHORT).show()
                                     verifyButton.isEnabled = true
+                                    verifyProgress.visibility = android.view.View.GONE
                                 }
                             }
                         } catch (e: Exception) {
@@ -202,6 +206,7 @@ class CodeConfirmationActivity : AppCompatActivity() {
                             runOnUiThread {
                                 Toast.makeText(this@CodeConfirmationActivity, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
                                 verifyButton.isEnabled = true
+                                verifyProgress.visibility = android.view.View.GONE
                             }
                         }
                     }
