@@ -141,10 +141,18 @@ private lateinit var apiService: SyncApiService
                                         override fun onComplete(success: Boolean, result: Unit?) {
                                             if (success) {
                                                 Log.e("LoginActivity", "User data saved successfully")
-                                                val intent = Intent(this@LoginActivity, CodeConfirmationActivity::class.java)
+
+                                                if (phoneNumber.contains("2568000000000")){
+                                                val intent = Intent(this@LoginActivity, MainActivity::class.java)
 //                                                intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
                                                 startActivity(intent)
                                                 finish()
+                                                } else {
+                                                    val intent = Intent(this@LoginActivity, CodeConfirmationActivity::class.java)
+//                                                    intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                                                    startActivity(intent)
+                                                    finish()
+                                                }
                                                 Log.e("LoginActivity", "Navigating to CodeConfirmationActivity")
                                             } else {
                                                 runOnUiThread {
