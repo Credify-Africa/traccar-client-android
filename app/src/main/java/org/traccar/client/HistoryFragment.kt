@@ -26,8 +26,15 @@ import android.net.Uri
 import android.os.Build
 import android.content.Context
 import android.provider.Settings
+import com.google.android.gms.maps.GoogleMap
+import com.google.android.gms.maps.OnMapReadyCallback
+import com.google.android.gms.maps.SupportMapFragment
+import com.google.android.gms.maps.model.LatLng
+import com.google.android.gms.maps.model.MarkerOptions
+import com.google.android.gms.location.FusedLocationProviderClient
+import com.google.android.gms.location.LocationServices
 
-class HistoryFragment : Fragment() {
+class HistoryFragment : Fragment(), OnMapReadyCallback {
 
     private var recyclerView: RecyclerView? = null
     private lateinit var adapter: SubmissionAdapter
@@ -35,6 +42,9 @@ class HistoryFragment : Fragment() {
 //    private val apiService = RetrofitClient.retrofit.create(SyncApiService::class.java)
     private lateinit var apiService: SyncApiService
     private var requestingPermissions: Boolean = false
+    private var googleMap: GoogleMap? = null // To hold the GoogleMap object
+    private lateinit var fusedLocationClient: FusedLocationProviderClient // For location updates
+
 //
 //    data class ShipmentTracking (
 //        val id :Int,
@@ -70,6 +80,12 @@ class HistoryFragment : Fragment() {
         dbHelper = DatabaseHelper(requireContext()) // Initialize after onAttach
         recyclerView = view.findViewById(R.id.submission_list)
 
+        fusedLocationClient = LocationServices.getFusedLocationProviderClient(requireActivity())
+
+        // Initialize Map
+        val mapFragment = childFragmentManager.findFragmentById(R.id.map) as SupportMapFragment?
+        mapFragment?.getMapAsync(this)
+
         if (recyclerView != null) {
             recyclerView?.layoutManager = LinearLayoutManager(requireContext())
             adapter = SubmissionAdapter()
@@ -91,6 +107,14 @@ class HistoryFragment : Fragment() {
         super.onStart()
         if (requestingPermissions) {
             requestingPermissions = BatteryOptimizationHelper().requestException(requireContext())
+        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        Log.d("HistoryFragment", "onResume called")
+        if (!isServiceRunning(TrackingService::class.java)) {
+            startTrackingService(checkPermission = true)
         }
     }
 
@@ -321,8 +345,10 @@ class HistoryFragment : Fragment() {
 
         override fun onBindViewHolder(holder: SubmissionViewHolder, position: Int) {
             val submission = submissions[position]
-            holder.containerId.text = "Shipment Id: ${submission.id}"
+            holder.containerId.text = "Conatiner No: ${submission.containerNo}"
             holder.comment.text = "Device Id: ${submission.deviceId}"
+            holder.status.text = "Status: ${submission.status ?: "PENDING"}"
+            holder.name.text = "Driver: ${submission.firstName ?: "Paul"} ${submission.lastName ?: "Naftali"}"
 
             Log.d("History", "On  Bind ViewHolder: ${holder.containerId.text}, ${holder.comment.text}, ${submission}")
         }
@@ -332,8 +358,55 @@ class HistoryFragment : Fragment() {
         inner class SubmissionViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
             val containerId: TextView = itemView.findViewById(R.id.container_id)
             val comment: TextView = itemView.findViewById(R.id.comment)
+            val status : TextView = itemView.findViewById(R.id.status)
+            val name : TextView = itemView.findViewById(R.id.name)
         }
     }
+
+    override fun onMapReady(map: GoogleMap) {
+        googleMap = map
+        Log.d("HistoryFragment", "Google Map is ready")
+
+        // Enable zoom controls and my location button
+        googleMap?.uiSettings?.isZoomControlsEnabled = true
+        googleMap?.uiSettings?.isMyLocationButtonEnabled = true
+
+        // Check for location permissions before attempting to get location
+        if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+            googleMap?.isMyLocationEnabled = true // Show blue dot for current location
+            getCurrentLocationAndAddMarker()
+        } else {
+            Log.d("HistoryFragment", "Location permission not granted for map. Blue dot might not show.")
+        }
+    }
+
+    private fun getCurrentLocationAndAddMarker() {
+        if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+            fusedLocationClient.lastLocation
+                .addOnSuccessListener { location ->
+                    if (location != null) {
+                        val currentLatLng = LatLng(location.latitude, location.longitude)
+                        Log.d("HistoryFragment", "Current Location: ${location.latitude}, ${location.longitude}")
+                        googleMap?.apply {
+                            clear() // Clear existing markers
+                            addMarker(MarkerOptions().position(currentLatLng).title("Current Location"))
+                            moveCamera(com.google.android.gms.maps.CameraUpdateFactory.newLatLngZoom(currentLatLng, 15f)) // Zoom level 15
+                        }
+                    } else {
+                        Log.w("HistoryFragment", "Last known location is null.")
+                        Toast.makeText(requireContext(), "Could not get current location. Please ensure location services are enabled.", Toast.LENGTH_LONG).show()
+                    }
+                }
+                .addOnFailureListener { e ->
+                    Log.e("HistoryFragment", "Error getting last known location: ${e.message}", e)
+                    Toast.makeText(requireContext(), "Error getting location: ${e.message}", Toast.LENGTH_LONG).show()
+                }
+        } else {
+            Log.d("HistoryFragment", "Location permission not granted for getCurrentLocationAndAddMarker.")
+            // Permissions are requested by startTrackingService, so we don't re-request here.
+        }
+    }
+
     companion object {
         private const val PERMISSIONS_REQUEST_LOCATION = 2
     }

@@ -27,7 +27,7 @@ data class ShipmentResponse(
     val message: String
 )
 
-data class LoginRequest(val phone: String, val deviceId: String)
+data class LoginRequest(val phone: String, val deviceId: String, val password: String)
 
 data class LoginResponse(
     val user: UserData?,

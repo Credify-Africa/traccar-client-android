@@ -1,0 +1,43 @@
+kotlin version: 2.1.20
+error message: Incremental compilation failed: Error unmarshaling return header; nested exception is: 
+	java.io.EOFException
+java.rmi.UnmarshalException: Error unmarshaling return header; nested exception is: 
+	java.io.EOFException
+	at java.rmi/sun.rmi.transport.StreamRemoteCall.executeCall(Unknown Source)
+	at java.rmi/sun.rmi.server.UnicastRef.invoke(Unknown Source)
+	at java.rmi/java.rmi.server.RemoteObjectInvocationHandler.invokeRemoteMethod(Unknown Source)
+	at java.rmi/java.rmi.server.RemoteObjectInvocationHandler.invoke(Unknown Source)
+	at jdk.proxy1/jdk.proxy1.$Proxy1.report(Unknown Source)
+	at org.jetbrains.kotlin.daemon.common.CompilerServicesFacadeBaseKt.report(CompilerServicesFacadeBase.kt:46)
+	at org.jetbrains.kotlin.daemon.common.CompilerServicesFacadeBaseKt.report$default(CompilerServicesFacadeBase.kt:45)
+	at org.jetbrains.kotlin.daemon.report.CompileServicesFacadeMessageCollector.report(CompileServicesFacadeMessageCollector.kt:41)
+	at org.jetbrains.kotlin.cli.common.messages.MessageCollectorImpl.forward(MessageCollectorImpl.kt:21)
+	at org.jetbrains.kotlin.incremental.IncrementalCompilerRunner.doCompile(IncrementalCompilerRunner.kt:542)
+	at org.jetbrains.kotlin.incremental.IncrementalCompilerRunner.compileImpl(IncrementalCompilerRunner.kt:431)
+	at org.jetbrains.kotlin.incremental.IncrementalCompilerRunner.tryCompileIncrementally$lambda$10$compile(IncrementalCompilerRunner.kt:258)
+	at org.jetbrains.kotlin.incremental.IncrementalCompilerRunner.tryCompileIncrementally(IncrementalCompilerRunner.kt:276)
+	at org.jetbrains.kotlin.incremental.IncrementalCompilerRunner.compile(IncrementalCompilerRunner.kt:128)
+	at org.jetbrains.kotlin.daemon.CompileServiceImplBase.execIncrementalCompiler(CompileServiceImpl.kt:678)
+	at org.jetbrains.kotlin.daemon.CompileServiceImplBase.access$execIncrementalCompiler(CompileServiceImpl.kt:92)
+	at org.jetbrains.kotlin.daemon.CompileServiceImpl.compile(CompileServiceImpl.kt:1805)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(Unknown Source)
+	at java.base/java.lang.reflect.Method.invoke(Unknown Source)
+	at java.rmi/sun.rmi.server.UnicastServerRef.dispatch(Unknown Source)
+	at java.rmi/sun.rmi.transport.Transport$1.run(Unknown Source)
+	at java.rmi/sun.rmi.transport.Transport$1.run(Unknown Source)
+	at java.base/java.security.AccessController.doPrivileged(Unknown Source)
+	at java.rmi/sun.rmi.transport.Transport.serviceCall(Unknown Source)
+	at java.rmi/sun.rmi.transport.tcp.TCPTransport.handleMessages(Unknown Source)
+	at java.rmi/sun.rmi.transport.tcp.TCPTransport$ConnectionHandler.run0(Unknown Source)
+	at java.rmi/sun.rmi.transport.tcp.TCPTransport$ConnectionHandler.lambda$run$0(Unknown Source)
+	at java.base/java.security.AccessController.doPrivileged(Unknown Source)
+	at java.rmi/sun.rmi.transport.tcp.TCPTransport$ConnectionHandler.run(Unknown Source)
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(Unknown Source)
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(Unknown Source)
+	at java.base/java.lang.Thread.run(Unknown Source)
+Caused by: java.io.EOFException
+	at java.base/java.io.DataInputStream.readUnsignedByte(Unknown Source)
+	at java.base/java.io.DataInputStream.readByte(Unknown Source)
+	... 32 more
+
+

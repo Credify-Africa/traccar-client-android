@@ -6,6 +6,7 @@ import android.util.Log
 import android.widget.Button
 import android.widget.EditText
 import android.widget.ProgressBar
+import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
@@ -21,6 +22,7 @@ import retrofit2.converter.gson.GsonConverterFactory
 import kotlin.text.startsWith
 import okhttp3.logging.HttpLoggingInterceptor
 import java.util.Random
+import com.google.android.material.textfield.TextInputEditText
 
 class LoginActivity : AppCompatActivity() {
     private lateinit var dbHelper: DatabaseHelper // Declare without initialization
@@ -84,15 +86,50 @@ private lateinit var apiService: SyncApiService
 
         apiService = retrofit.create(SyncApiService::class.java)
 
-        val usernameInput = findViewById<EditText>(R.id.phone_number)
+        val usernameInput = findViewById<TextInputEditText>(R.id.phone_number)
         val loginButton = findViewById<Button>(R.id.login_button)
         val loginProgress = findViewById<ProgressBar>(R.id.login_progress)
+        val passwordInput = findViewById<TextInputEditText>(R.id.password)
+        val passwordHint = findViewById<TextView>(R.id.password_hint)
+
 
         if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION) != android.content.pm.PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(this, arrayOf(android.Manifest.permission.ACCESS_FINE_LOCATION, android.Manifest.permission.ACCESS_BACKGROUND_LOCATION), 1)
         }
 
+        usernameInput.setOnFocusChangeListener { _, hasFocus ->
+            Log.e("LoginActivity", "usernameInput focus changed. hasFocus: $hasFocus")
+            if (!hasFocus) {
+                val phone = usernameInput.text.toString().trim()
+                if (phone.isNotEmpty()) {
+                    Log.e("LoginActivity", "Checking user by phone: $phone")
+                    dbHelper.getUserByPhoneAsync(phone, object : DatabaseHandler<User?> {
+                        override fun onComplete(success: Boolean, result: User?) {
+                            runOnUiThread {
+//                                Log.e("LoginActivity", "getUserByPhoneAsync completed. Success: $success, Result: $result")
+                                if (result == null) {
+                                    // First time user, generate and show password
+
+                                    passwordHint.text = "First time user? here is a reccomended pin"
+                                    passwordHint.visibility = android.view.View.VISIBLE
+                                    passwordInput.setText(generateRecommendedPassword())
+                                } else {
+                                    passwordHint.visibility = android.view.View.GONE
+                                    passwordInput.setText("")
+                                }
+                            }
+                        }
+                    })
+                }
+            }
+        }
+
+        passwordInput.text
+
         loginButton.setOnClickListener {
+            usernameInput.clearFocus() // Add this line
+            passwordInput.clearFocus()
+
             loginButton.isEnabled = false
             loginProgress.visibility = android.view.View.VISIBLE
             val phoneNumber = usernameInput.text.toString().trim()
@@ -103,13 +140,20 @@ private lateinit var apiService: SyncApiService
                 return@setOnClickListener
             }
 
+            val password = passwordInput.text.toString().trim()
+            if (password.isEmpty()) {
+                Toast.makeText(this, "Please enter your pin", Toast.LENGTH_SHORT).show()
+                loginButton.isEnabled = true
+                return@setOnClickListener
+            }
+
             val deviceId = preferences.getString(MainFragment.KEY_DEVICE, "undefined")!!
             Log.d("LoginActivity", "Attempting login with phone: $phoneNumber, deviceId: $deviceId")
-            Toast.makeText(this@LoginActivity, "ID: ${deviceId}", Toast.LENGTH_LONG).show()
+//            Toast.makeText(this@LoginActivity, "ID: ${deviceId}", Toast.LENGTH_LONG).show()
 
             CoroutineScope(Dispatchers.IO).launch {
                 try {
-                    val retrofitResponse: retrofit2.Response<LoginResponse> = apiService.login(LoginRequest(phoneNumber, deviceId))
+                    val retrofitResponse: retrofit2.Response<LoginResponse> = apiService.login(LoginRequest(phoneNumber, deviceId, password))
 
                     // Get the HTTP status code
                     val httpStatusCode = retrofitResponse.code()
@@ -141,19 +185,23 @@ private lateinit var apiService: SyncApiService
                                         override fun onComplete(success: Boolean, result: Unit?) {
                                             if (success) {
                                                 Log.e("LoginActivity", "User data saved successfully")
-
-                                                if (phoneNumber.contains("2568000000000")){
                                                 val intent = Intent(this@LoginActivity, MainActivity::class.java)
 //                                                intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
                                                 startActivity(intent)
                                                 finish()
-                                                } else {
-                                                    val intent = Intent(this@LoginActivity, CodeConfirmationActivity::class.java)
-//                                                    intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-                                                    startActivity(intent)
-                                                    finish()
-                                                }
-                                                Log.e("LoginActivity", "Navigating to CodeConfirmationActivity")
+
+//                                                if (phoneNumber.contains("2568000000000")){
+//                                                val intent = Intent(this@LoginActivity, MainActivity::class.java)
+////                                                intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+//                                                startActivity(intent)
+//                                                finish()
+//                                                } else {
+//                                                    val intent = Intent(this@LoginActivity, CodeConfirmationActivity::class.java)
+////                                                    intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+//                                                    startActivity(intent)
+//                                                    finish()
+//                                                }
+//                                                Log.e("LoginActivity", "Navigating to CodeConfirmationActivity")
                                             } else {
                                                 runOnUiThread {
                                                     Toast.makeText(this@LoginActivity, "Failed to save user data", Toast.LENGTH_SHORT).show()
@@ -249,5 +297,30 @@ private lateinit var apiService: SyncApiService
                 editor.apply()
             }
         })
+    }
+
+    fun generateRecommendedPassword(): String {
+        val random = java.util.Random()
+        var password: String
+        do {
+            val digits = mutableListOf<Char>()
+            while (digits.size < 4) {
+                val nextDigit = ('0' + random.nextInt(10))
+                if (digits.count { it == nextDigit } < 2) {
+                    digits.add(nextDigit)
+                }
+            }
+            // Ensure the first digit is not '0'
+            if (digits[0] == '0') {
+                val nonZeroIndex = digits.indexOfFirst { it != '0' }
+                if (nonZeroIndex > 0) {
+                    val temp = digits[0]
+                    digits[0] = digits[nonZeroIndex]
+                    digits[nonZeroIndex] = temp
+                }
+            }
+            password = digits.joinToString("")
+        } while (password == "1234")
+        return password
     }
 }
