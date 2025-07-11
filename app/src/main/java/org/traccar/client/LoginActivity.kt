@@ -144,6 +144,10 @@ private lateinit var apiService: SyncApiService
                     Snackbar.make(rootView, "Please enter your pin", Snackbar.LENGTH_LONG).show()
 //                    null
                 }
+
+                if (password.length > 4 || password.length < 4) {
+                    Snackbar.make(rootView, "Pin is too long or too short", Snackbar.LENGTH_LONG).show()
+                }
 //                } else {
 //                    passwordHint.visibility = android.view.View.GONE
 //                }
@@ -372,7 +376,7 @@ private lateinit var apiService: SyncApiService
                 null
             }
             else -> {
-                val fullPhone = "+" + ccp.selectedCountryCode + sanitized
+                val fullPhone = ccp.selectedCountryCode + sanitized
                 fullPhone.replace(" ", "")
             }
         }

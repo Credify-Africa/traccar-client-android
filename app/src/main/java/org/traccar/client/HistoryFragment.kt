@@ -97,10 +97,16 @@ class HistoryFragment : Fragment(), OnMapReadyCallback {
 //        Log.e("History", "${PreferenceManager.getDefaultSharedPreferences(requireContext())
 //            .getString(MainFragment.KEY_DEVICE, null)}")
 
-        val sharedPreferences = PreferenceManager.getDefaultSharedPreferences(requireContext())
-        if (!isServiceRunning(TrackingService::class.java)) {
-            startTrackingService(checkPermission = true)
-        }
+//        val sharedPreferences = PreferenceManager.getDefaultSharedPreferences(requireContext())
+//        val permissionAsked = sharedPreferences.getBoolean("location_permission_asked", false)
+
+        startTrackingService(checkPermission = true)
+
+
+//        if (!isServiceRunning(TrackingService::class.java)) {
+//            startTrackingService(checkPermission = true)
+//        }
+
     }
 
     override fun onStart() {
@@ -112,8 +118,11 @@ class HistoryFragment : Fragment(), OnMapReadyCallback {
 
     override fun onResume() {
         super.onResume()
+        val prefs = PreferenceManager.getDefaultSharedPreferences(requireContext())
+        val permissionAsked = prefs.getBoolean(KEY_PERMISSION_ASKED, false)
+
         Log.d("HistoryFragment", "onResume called")
-        if (!isServiceRunning(TrackingService::class.java)) {
+        if (!isServiceRunning(TrackingService::class.java) && !permissionAsked) {
             startTrackingService(checkPermission = true)
         }
     }
@@ -129,6 +138,9 @@ class HistoryFragment : Fragment(), OnMapReadyCallback {
     }
 
     private fun startTrackingService(checkPermission: Boolean) {
+        val prefs = PreferenceManager.getDefaultSharedPreferences(requireContext())
+        val permissionAsked = prefs.getBoolean(KEY_PERMISSION_ASKED, false)
+
         val requiredPermissions = mutableSetOf<String>()
         if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             requiredPermissions.add(Manifest.permission.ACCESS_FINE_LOCATION)
@@ -149,6 +161,7 @@ class HistoryFragment : Fragment(), OnMapReadyCallback {
             // Request battery optimization exemption
             requestingPermissions = BatteryOptimizationHelper().requestException(requireContext())
         } else {
+            prefs.edit().putBoolean(KEY_PERMISSION_ASKED, true).apply()
             // Check if we should show rationale
             val showRationale = requiredPermissions.any { permission ->
                 ActivityCompat.shouldShowRequestPermissionRationale(requireActivity(), permission)
@@ -409,5 +422,7 @@ class HistoryFragment : Fragment(), OnMapReadyCallback {
 
     companion object {
         private const val PERMISSIONS_REQUEST_LOCATION = 2
+        private const val KEY_PERMISSION_ASKED = "location_permission_asked"
+        private const val KEY_TRACKING_RUNNING = "tracking_service_running"
     }
 }
