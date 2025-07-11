@@ -3,6 +3,7 @@ package org.traccar.client
 import android.content.Intent
 import android.os.Bundle
 import android.util.Log
+import android.view.View
 import android.widget.Button
 import android.widget.EditText
 import android.widget.ProgressBar
@@ -23,6 +24,9 @@ import kotlin.text.startsWith
 import okhttp3.logging.HttpLoggingInterceptor
 import java.util.Random
 import com.google.android.material.textfield.TextInputEditText
+import com.hbb20.CountryCodePicker
+import com.google.android.material.snackbar.Snackbar
+
 
 class LoginActivity : AppCompatActivity() {
     private lateinit var dbHelper: DatabaseHelper // Declare without initialization
@@ -87,10 +91,14 @@ private lateinit var apiService: SyncApiService
         apiService = retrofit.create(SyncApiService::class.java)
 
         val usernameInput = findViewById<TextInputEditText>(R.id.phone_number)
+        val ccp = findViewById<CountryCodePicker>(R.id.country_code_picker)
         val loginButton = findViewById<Button>(R.id.login_button)
         val loginProgress = findViewById<ProgressBar>(R.id.login_progress)
         val passwordInput = findViewById<TextInputEditText>(R.id.password)
         val passwordHint = findViewById<TextView>(R.id.password_hint)
+        val rootView = findViewById<View>(R.id.root_layout)
+
+        ccp.registerCarrierNumberEditText(usernameInput)
 
 
         if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION) != android.content.pm.PackageManager.PERMISSION_GRANTED) {
@@ -101,8 +109,10 @@ private lateinit var apiService: SyncApiService
             Log.e("LoginActivity", "usernameInput focus changed. hasFocus: $hasFocus")
             if (!hasFocus) {
                 val phone = usernameInput.text.toString().trim()
+                validatePhoneNumber(phone, rootView, ccp)
                 if (phone.isNotEmpty()) {
                     Log.e("LoginActivity", "Checking user by phone: $phone")
+
                     dbHelper.getUserByPhoneAsync(phone, object : DatabaseHandler<User?> {
                         override fun onComplete(success: Boolean, result: User?) {
                             runOnUiThread {
@@ -124,6 +134,22 @@ private lateinit var apiService: SyncApiService
             }
         }
 
+        passwordInput.setOnFocusChangeListener { _, hasFocus ->
+            Log.e("LoginActivity", "passwordInput focus changed. hasFocus: $hasFocus")
+            if (!hasFocus) {
+                val password = passwordInput.text.toString().trim()
+                if (password.isEmpty()) {
+//                    passwordHint.visibility = android.view.View.VISIBLE
+//                    passwordHint.text = "Please enter your pin"
+                    Snackbar.make(rootView, "Please enter your pin", Snackbar.LENGTH_LONG).show()
+//                    null
+                }
+//                } else {
+//                    passwordHint.visibility = android.view.View.GONE
+//                }
+            }
+        }
+
         passwordInput.text
 
         loginButton.setOnClickListener {
@@ -132,28 +158,59 @@ private lateinit var apiService: SyncApiService
 
             loginButton.isEnabled = false
             loginProgress.visibility = android.view.View.VISIBLE
-            val phoneNumber = usernameInput.text.toString().trim()
 
-            if (phoneNumber.isEmpty()) {
-                Toast.makeText(this, "Please enter your phone number", Toast.LENGTH_SHORT).show()
+            val rawPhone = usernameInput.text.toString().trim()
+            val fullPhone = validatePhoneNumber(rawPhone, rootView, ccp)
+
+            if (fullPhone == null) {
                 loginButton.isEnabled = true
+                loginProgress.visibility = View.GONE
                 return@setOnClickListener
             }
+//            val phoneNumber = usernameInput.text.toString().trim()
 
+//            val fullPhoneNumber = ccp.fullNumberWithPlus
+//            Log.d("LoginActivity", "Full phone number: $fullPhoneNumber")
+
+
+//            if (phoneNumber.isEmpty()) {
+//                Snackbar.make(rootView, "Please enter your phone number", Snackbar.LENGTH_SHORT).show()
+////                Toast.makeText(this, "Please enter your phone number", Toast.LENGTH_SHORT).show()
+//                loginButton.isEnabled = true
+//                return@setOnClickListener
+//            }
+//
+//            var sanitized = phoneNumber
+//            if (phoneNumber.startsWith("0")) {
+//                sanitized = phoneNumber.substring(1)
+//            }
+//
+//            if (sanitized.length < 9) {
+//                Snackbar.make(rootView, "Phone number seems too short", Snackbar.LENGTH_SHORT).show()
+////                Toast.makeText(this, "Phone number seems too short", Toast.LENGTH_SHORT).show()
+//                return@setOnClickListener
+//            }
+//
+//            var fullPhone = "+" + ccp.selectedCountryCode + sanitized
+//            fullPhone = fullPhone.replace(" ", "")
+//            Log.d("LoginActivity", "Full phone number: $fullPhone")
+//
             val password = passwordInput.text.toString().trim()
             if (password.isEmpty()) {
-                Toast.makeText(this, "Please enter your pin", Toast.LENGTH_SHORT).show()
-                loginButton.isEnabled = true
+                runOnUiThread {
+                    Toast.makeText(this, "Please enter your pin", Toast.LENGTH_SHORT).show()
+                    loginButton.isEnabled = true
+                }
                 return@setOnClickListener
             }
 
             val deviceId = preferences.getString(MainFragment.KEY_DEVICE, "undefined")!!
-            Log.d("LoginActivity", "Attempting login with phone: $phoneNumber, deviceId: $deviceId")
+            Log.d("LoginActivity", "Attempting login with phone: $fullPhone, deviceId: $deviceId")
 //            Toast.makeText(this@LoginActivity, "ID: ${deviceId}", Toast.LENGTH_LONG).show()
 
             CoroutineScope(Dispatchers.IO).launch {
                 try {
-                    val retrofitResponse: retrofit2.Response<LoginResponse> = apiService.login(LoginRequest(phoneNumber, deviceId, password))
+                    val retrofitResponse: retrofit2.Response<LoginResponse> = apiService.login(LoginRequest(fullPhone, deviceId, password))
 
                     // Get the HTTP status code
                     val httpStatusCode = retrofitResponse.code()
@@ -220,11 +277,12 @@ private lateinit var apiService: SyncApiService
                             } else {
                                 // Your custom API response indicates failure, even if HTTP status is 2xx
                                 Log.e("LOGIN", "${apiResponse.message}")
-                                runOnUiThread {
-                                    Toast.makeText(this@LoginActivity, "Login failed: ${apiResponse.message}", Toast.LENGTH_SHORT).show()
+//                                runOnUiThread {
+                                    Snackbar.make(rootView, "Login failed: Incorrect password or phone number", Snackbar.LENGTH_SHORT).show()
+//                                    Toast.makeText(this@LoginActivity, "Login failed: Incorrect password or phone number", Toast.LENGTH_SHORT).show()
                                     loginButton.isEnabled = true
                                     loginProgress.visibility = android.view.View.GONE
-                                }
+//                                }
                             }
                         } else {
                             // Response body was null (e.g., 204 No Content, but typically not for login)
@@ -240,7 +298,8 @@ private lateinit var apiService: SyncApiService
                         val errorBody = retrofitResponse.errorBody()?.string()
                         Log.e("LoginActivity", "Login failed: HTTP Status Code $httpStatusCode, Error Body: $errorBody")
                         runOnUiThread {
-                            Toast.makeText(this@LoginActivity, "Login failed: Server error ($httpStatusCode)", Toast.LENGTH_SHORT).show()
+//                        Snackbar.make(rootView, "Login failed: Incorrect password or phone number", Snackbar.LENGTH_SHORT).show()
+                            Toast.makeText(this@LoginActivity, "Login failed: Incorrect password or phone number", Toast.LENGTH_SHORT).show()
                             loginButton.isEnabled = true
                             loginProgress.visibility = android.view.View.GONE
                         }
@@ -248,7 +307,8 @@ private lateinit var apiService: SyncApiService
                 } catch (e: Exception) {
                     Log.e("LoginActivity", "Exception during login: ${e.message} ", e)
                     runOnUiThread {
-                        Toast.makeText(this@LoginActivity, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
+//                    Snackbar.make(rootView, "Login failed: Incorrect password or phone number", Snackbar.LENGTH_SHORT).show()
+                        Toast.makeText(this@LoginActivity, "Incorrect password or phone number", Toast.LENGTH_SHORT).show()
                         loginButton.isEnabled = true
                         loginProgress.visibility = android.view.View.GONE
                     }
@@ -298,6 +358,26 @@ private lateinit var apiService: SyncApiService
             }
         })
     }
+
+    private fun validatePhoneNumber(rawPhone: String, rootView: View, ccp: CountryCodePicker): String? {
+        val sanitized = if (rawPhone.startsWith("0")) rawPhone.substring(1) else rawPhone
+
+        return when {
+            rawPhone.isEmpty() -> {
+                Snackbar.make(rootView, "Please enter your phone number", Snackbar.LENGTH_LONG).show()
+                null
+            }
+            sanitized.length < 9 -> {
+                Snackbar.make(rootView, "Phone number seems too short", Snackbar.LENGTH_LONG).show()
+                null
+            }
+            else -> {
+                val fullPhone = "+" + ccp.selectedCountryCode + sanitized
+                fullPhone.replace(" ", "")
+            }
+        }
+    }
+
 
     fun generateRecommendedPassword(): String {
         val random = java.util.Random()
