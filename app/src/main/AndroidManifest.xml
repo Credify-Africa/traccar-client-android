@@ -32,7 +32,7 @@
 
         <meta-data
             android:name="com.google.android.geo.API_KEY"
-            android:value="AIzaSyCMG8_ajQBwSMggGVeWWI-hy6pbIwQtjqU" />
+            android:value="AIzaSyCC5wb_iZaaSh0w26j5NqfXbkEowszwCPA" />
 
         <meta-data
             android:name="google_analytics_adid_collection_enabled"
@@ -48,7 +48,23 @@
             android:exported="false"
             android:label="Code Confirmation" />
 
+        <activity
+            android:name=".CodeVerificationActiivity"
+            android:exported="false"
+            android:label="Verify Code"
+            />
 
+        <activity
+            android:name=".PhoneSubmitActivity"
+            android:exported="false"
+            android:label="Submit Phone Number"
+            />
+
+        <activity
+            android:name=".PasswordSubmitActivity"
+            android:exported="false"
+            android:label="Submit Password"
+            />
 
         <activity android:name=".SplashActivity" android:exported="true">
             <intent-filter>

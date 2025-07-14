@@ -96,7 +96,11 @@ private lateinit var apiService: SyncApiService
         val loginProgress = findViewById<ProgressBar>(R.id.login_progress)
         val passwordInput = findViewById<TextInputEditText>(R.id.password)
         val passwordHint = findViewById<TextView>(R.id.password_hint)
+        val forgotPassword = findViewById<TextView>(R.id.forgot_password)
         val rootView = findViewById<View>(R.id.root_layout)
+
+        ccp.setDefaultCountryUsingNameCode("KE")
+        ccp.resetToDefaultCountry()
 
         ccp.registerCarrierNumberEditText(usernameInput)
 
@@ -319,7 +323,14 @@ private lateinit var apiService: SyncApiService
                 }
             }
         }
+
+
+        forgotPassword.setOnClickListener {
+            val intent = Intent(this, PhoneSubmitActivity::class.java)
+            startActivity(intent)
+        }
     }
+
     private fun initializePreferences() {
         val sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this)
         val editor = sharedPreferences.edit()
