@@ -113,7 +113,7 @@ private lateinit var apiService: SyncApiService
             Log.e("LoginActivity", "usernameInput focus changed. hasFocus: $hasFocus")
             if (!hasFocus) {
                 val phone = usernameInput.text.toString().trim()
-                validatePhoneNumber(phone, rootView, ccp)
+                Utils.validatePhoneNumber(phone, rootView, ccp)
                 if (phone.isNotEmpty()) {
                     Log.e("LoginActivity", "Checking user by phone: $phone")
 
@@ -168,7 +168,7 @@ private lateinit var apiService: SyncApiService
             loginProgress.visibility = android.view.View.VISIBLE
 
             val rawPhone = usernameInput.text.toString().trim()
-            val fullPhone = validatePhoneNumber(rawPhone, rootView, ccp)
+            val fullPhone = Utils.validatePhoneNumber(rawPhone, rootView, ccp)
 
             if (fullPhone == null) {
                 loginButton.isEnabled = true
@@ -374,24 +374,24 @@ private lateinit var apiService: SyncApiService
         })
     }
 
-    private fun validatePhoneNumber(rawPhone: String, rootView: View, ccp: CountryCodePicker): String? {
-        val sanitized = if (rawPhone.startsWith("0")) rawPhone.substring(1) else rawPhone
-
-        return when {
-            rawPhone.isEmpty() -> {
-                Snackbar.make(rootView, "Please enter your phone number", Snackbar.LENGTH_LONG).show()
-                null
-            }
-            sanitized.length < 9 -> {
-                Snackbar.make(rootView, "Phone number seems too short", Snackbar.LENGTH_LONG).show()
-                null
-            }
-            else -> {
-                val fullPhone = ccp.selectedCountryCode + sanitized
-                fullPhone.replace(" ", "")
-            }
-        }
-    }
+//    private fun validatePhoneNumber(rawPhone: String, rootView: View, ccp: CountryCodePicker): String? {
+//        val sanitized = if (rawPhone.startsWith("0")) rawPhone.substring(1) else rawPhone
+//
+//        return when {
+//            rawPhone.isEmpty() -> {
+//                Snackbar.make(rootView, "Please enter your phone number", Snackbar.LENGTH_LONG).show()
+//                null
+//            }
+//            sanitized.length < 9 -> {
+//                Snackbar.make(rootView, "Phone number seems too short", Snackbar.LENGTH_LONG).show()
+//                null
+//            }
+//            else -> {
+//                val fullPhone = ccp.selectedCountryCode + sanitized
+//                fullPhone.replace(" ", "")
+//            }
+//        }
+//    }
 
 
     fun generateRecommendedPassword(): String {

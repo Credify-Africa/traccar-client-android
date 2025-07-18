@@ -10,10 +10,19 @@ interface SyncApiService {
     suspend fun sendPosition(@Body position: Position)
 
     @POST("shipment-tracking-event")
-    suspend fun sendFormData(@Body submission: FormSubmission)
+    suspend fun sendFormData(@Body submission: FormSubmission): retrofit2.Response<Unit>
 
     @POST("driver-login")
     suspend fun login(@Body request: LoginRequest): retrofit2.Response<LoginResponse>
+
+    @POST("mobile/request-reset")
+    suspend fun requestResetPassword(@Body request: RestPasswordRequest): retrofit2.Response<RestPasswordResponse>
+
+    @POST("mobile/verify-code")
+    suspend fun vrifyResetCode(@Body request: verifyResetCodeRequest): retrofit2.Response<verifyResetCodeResponse>
+
+    @POST("mobile/reset-password")
+    suspend fun resetPassword(@Body request: ResetPasswordRequest): retrofit2.Response<ResetPasswordResponse>
 
     @POST("verify-email")
     suspend fun verifyCode(@Body request: CodeVerificationRequest): retrofit2.Response<CodeVerificationResponse>
@@ -45,4 +54,33 @@ data class CodeVerificationResponse(
     val message: String,
     val success: Boolean,
     val userData: UserData?
+)
+
+data class RestPasswordRequest(
+    val phone: String?,
+)
+
+data class RestPasswordResponse(
+    val message: String,
+)
+
+data class verifyResetCodeRequest(
+    val code: String,
+    val phone: String?,
+)
+
+data class verifyResetCodeResponse(
+    val message: String,
+    val success: Boolean,
+)
+
+data class ResetPasswordRequest(
+    val phone: String,
+    val password: String,
+    val confirmPassword: String
+)
+
+data class ResetPasswordResponse(
+    val message: String,
+    val success: Boolean
 )
