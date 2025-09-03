@@ -20,6 +20,9 @@
     <uses-feature android:name="android.hardware.location.network" />
     <uses-feature android:name="android.hardware.location.gps" />
 
+    <uses-permission android:name="com.google.android.gms.permission.AD_ID" tools:node="remove" />
+
+
     <application
         android:allowBackup="true"
         android:networkSecurityConfig="@xml/network_security_config"
@@ -30,8 +33,26 @@
         tools:ignore="GoogleAppIndexingWarning,UnusedAttribute">
 
         <meta-data
+            android:name="com.google.android.geo.API_KEY"
+            android:value="AIzaSyCC5wb_iZaaSh0w26j5NqfXbkEowszwCPA" />
+
+        <meta-data
             android:name="google_analytics_adid_collection_enabled"
             android:value="false" />
+
+        <meta-data android:name="io.sentry.dsn" android:value="https://8d4b2279bb4954b79824df20279cb6b8@o4505748621426688.ingest.us.sentry.io/4509954297626624" />
+
+        <!-- Add data like request headers, user ip adress and device name, see https://docs.sentry.io/platforms/android/data-management/data-collected/ for more info -->
+        <meta-data android:name="io.sentry.send-default-pii" android:value="true" />
+
+        <!-- enable automatic breadcrumbs for user interactions (clicks, swipes, scrolls) -->
+        <meta-data android:name="io.sentry.traces.user-interaction.enable" android:value="true" />
+        <!-- enable screenshot for crashes -->
+        <meta-data android:name="io.sentry.attach-screenshot" android:value="true" />
+        <!-- enable view hierarchy for crashes -->
+        <meta-data android:name="io.sentry.attach-view-hierarchy" android:value="true" />
+
+
         <activity android:name=".LoginActivity" android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -43,7 +64,23 @@
             android:exported="false"
             android:label="Code Confirmation" />
 
+        <activity
+            android:name=".CodeVerificationActiivity"
+            android:exported="false"
+            android:label="Verify Code"
+            />
 
+        <activity
+            android:name=".PhoneSubmitActivity"
+            android:exported="false"
+            android:label="Submit Phone Number"
+            />
+
+        <activity
+            android:name=".PasswordSubmitActivity"
+            android:exported="false"
+            android:label="Submit Password"
+            />
 
         <activity android:name=".SplashActivity" android:exported="true">
             <intent-filter>

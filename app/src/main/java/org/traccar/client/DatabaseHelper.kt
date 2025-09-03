@@ -337,6 +337,32 @@ class DatabaseHelper(context: Context?) : SQLiteOpenHelper(context, DATABASE_NAM
         }
     }
 
+
+    @SuppressLint("Range")
+    fun getUserByPhone(phone: String): User? {
+        db.rawQuery("SELECT * FROM user WHERE phone = ? LIMIT 1", arrayOf(phone)).use { cursor ->
+            if (cursor.moveToFirst()) {
+                return User(
+                    id = cursor.getLong(cursor.getColumnIndex("id")),
+                    phone = cursor.getString(cursor.getColumnIndex("phone")),
+                    firstName = cursor.getString(cursor.getColumnIndex("firstName")),
+                    lastName = cursor.getString(cursor.getColumnIndex("lastName")),
+                    password = cursor.getString(cursor.getColumnIndex("password")),
+                    token = cursor.getString(cursor.getColumnIndex("token"))
+                )
+            }
+        }
+        return null
+    }
+
+    fun getUserByPhoneAsync(phone: String, handler: DatabaseHandler<User?>) {
+        object : DatabaseAsyncTask<User?>(handler) {
+            override fun executeMethod(): User? {
+                return getUserByPhone(phone)
+            }
+        }.execute()
+    }
+
     // Device ID methods
     fun insertDeviceId(deviceId: String) {
         val values = ContentValues()
