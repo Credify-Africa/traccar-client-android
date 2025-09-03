@@ -4,6 +4,7 @@ plugins {
     id 'com.google.gms.google-services'
     id 'com.google.firebase.crashlytics'
     id 'kotlin-kapt'
+    id "io.sentry.android.gradle" version "5.9.0"
 }
 
 android {
@@ -12,8 +13,8 @@ android {
         applicationId 'com.credify.client'
         minSdkVersion 21
         targetSdkVersion 35
-        versionCode 1
-        versionName '1.0.1'
+        versionCode 8
+        versionName '1.0.0'
         multiDexEnabled true
     }
     namespace 'org.traccar.client'

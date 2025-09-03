@@ -125,6 +125,17 @@ class HistoryFragment : Fragment(), OnMapReadyCallback {
         if (!isServiceRunning(TrackingService::class.java) && !permissionAsked) {
             startTrackingService(checkPermission = true)
         }
+
+        googleMap?.let { map ->
+            if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+                if (!map.isMyLocationEnabled) { // Only set if not already enabled to avoid redundant calls
+                    map.isMyLocationEnabled = true
+                    getCurrentLocationAndAddMarker()
+                    Log.d("HistoryFragment", "Map MyLocation enabled and location refreshed in onResume.")
+                }
+            }
+        }
+
     }
 
     private fun isServiceRunning(serviceClass: Class<*>): Boolean {
@@ -160,6 +171,13 @@ class HistoryFragment : Fragment(), OnMapReadyCallback {
             Log.d("HistoryFragment", "TrackingService started")
             // Request battery optimization exemption
             requestingPermissions = BatteryOptimizationHelper().requestException(requireContext())
+            googleMap?.let { map ->
+                if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+                    map.isMyLocationEnabled = true
+                    getCurrentLocationAndAddMarker() // Re-attempt to get and show location
+                    Log.d("HistoryFragment", "Map MyLocation enabled and location refreshed after granting permissions.")
+                }
+            }
         } else {
             prefs.edit().putBoolean(KEY_PERMISSION_ASKED, true).apply()
             // Check if we should show rationale
@@ -289,6 +307,14 @@ class HistoryFragment : Fragment(), OnMapReadyCallback {
                 val token = rawToken?.substringAfter("Authorization=")?.substringBefore(";")?.trim()
 
                 Log.e("History", "Token: ${token}")
+
+                if (token == null) {
+                    Log.e("History", "Auth token is null, cannot fetch submissions.")
+                    Toast.makeText(requireContext(), "Session expired, please log in.", Toast.LENGTH_SHORT).show()
+                    startActivity(Intent(requireContext(), LoginActivity::class.java))
+                    requireActivity().finish()
+                    return@launch
+                }
 
                 apiService = RetrofitClient.getApiKeyClient(token.toString()).create(SyncApiService::class.java)
 

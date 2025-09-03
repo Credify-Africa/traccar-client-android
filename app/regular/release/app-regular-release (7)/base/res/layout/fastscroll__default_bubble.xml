@@ -1,15 +1,0 @@
-
-™
-;
-android*http://schemas.android.com/apk/res/android"TextView"R
-*http://schemas.android.com/apk/res/android
-visibility	invisible"(Ü„2:0"˜
-*http://schemas.android.com/apk/res/android
-background$@drawable/fastscroll__default_bubble"(Ô„2/
--œ ø#drawable/fastscroll__default_bubble0"L
-*http://schemas.android.com/apk/res/androidgravitycenter"(¯„2:8"L
-*http://schemas.android.com/apk/res/android	elevation2dp"(Àˆ„2:h"P
-*http://schemas.android.com/apk/res/androidlayout_margin1dp"(ö„2:h"Q
-*http://schemas.android.com/apk/res/androidlayout_width64dp"(ô„2:h€"R
-*http://schemas.android.com/apk/res/androidlayout_height64dp"(õ„2:h€"L
-*http://schemas.android.com/apk/res/androidtextSize24sp"(•„2:h‚0"
