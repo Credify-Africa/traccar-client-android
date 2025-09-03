@@ -27,7 +27,6 @@ import com.google.android.material.textfield.TextInputEditText
 import com.hbb20.CountryCodePicker
 import com.google.android.material.snackbar.Snackbar
 
-
 class LoginActivity : AppCompatActivity() {
     private lateinit var dbHelper: DatabaseHelper // Declare without initialization
 //    private val apiService = RetrofitClient.retrofit.create(SyncApiService::class.java)

@@ -34,6 +34,7 @@ android {
             ext.enableCrashlytics = false
         }
 //        google
+
     }
 
     testOptions {
@@ -91,6 +92,7 @@ dependencies {
     implementation 'com.hbb20:ccp:2.5.4'
 
 }
+
 
 tasks.register('copyFirebaseConfig', Copy) {
     from '../../environment/google-services'

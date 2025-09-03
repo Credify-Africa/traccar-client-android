@@ -337,6 +337,7 @@ class DatabaseHelper(context: Context?) : SQLiteOpenHelper(context, DATABASE_NAM
         }
     }
 
+
     @SuppressLint("Range")
     fun getUserByPhone(phone: String): User? {
         db.rawQuery("SELECT * FROM user WHERE phone = ? LIMIT 1", arrayOf(phone)).use { cursor ->

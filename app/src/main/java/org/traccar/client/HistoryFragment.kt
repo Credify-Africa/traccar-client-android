@@ -36,6 +36,7 @@ import com.google.android.gms.location.LocationServices
 
 class HistoryFragment : Fragment(), OnMapReadyCallback {
 
+
     private var recyclerView: RecyclerView? = null
     private lateinit var adapter: SubmissionAdapter
     private lateinit var dbHelper: DatabaseHelper
@@ -80,11 +81,13 @@ class HistoryFragment : Fragment(), OnMapReadyCallback {
         dbHelper = DatabaseHelper(requireContext()) // Initialize after onAttach
         recyclerView = view.findViewById(R.id.submission_list)
 
+
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(requireActivity())
 
         // Initialize Map
         val mapFragment = childFragmentManager.findFragmentById(R.id.map) as SupportMapFragment?
         mapFragment?.getMapAsync(this)
+
 
         if (recyclerView != null) {
             recyclerView?.layoutManager = LinearLayoutManager(requireContext())
@@ -106,6 +109,7 @@ class HistoryFragment : Fragment(), OnMapReadyCallback {
 //        if (!isServiceRunning(TrackingService::class.java)) {
 //            startTrackingService(checkPermission = true)
 //        }
+
 
     }
 
@@ -180,6 +184,7 @@ class HistoryFragment : Fragment(), OnMapReadyCallback {
             }
         } else {
             prefs.edit().putBoolean(KEY_PERMISSION_ASKED, true).apply()
+
             // Check if we should show rationale
             val showRationale = requiredPermissions.any { permission ->
                 ActivityCompat.shouldShowRequestPermissionRationale(requireActivity(), permission)
@@ -315,6 +320,7 @@ class HistoryFragment : Fragment(), OnMapReadyCallback {
                     requireActivity().finish()
                     return@launch
                 }
+
 
                 apiService = RetrofitClient.getApiKeyClient(token.toString()).create(SyncApiService::class.java)
 
