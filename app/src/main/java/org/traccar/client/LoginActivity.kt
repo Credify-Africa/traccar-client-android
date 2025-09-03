@@ -1,6 +1,7 @@
 package org.traccar.client
 
 import android.content.Intent
+import android.graphics.Color
 import android.os.Bundle
 import android.util.Log
 import android.view.View
@@ -100,7 +101,7 @@ private lateinit var apiService: SyncApiService
 
         ccp.setDefaultCountryUsingNameCode("KE")
         ccp.resetToDefaultCountry()
-
+        ccp.setDialogBackgroundColor(Color.WHITE)
         ccp.registerCarrierNumberEditText(usernameInput)
 
 

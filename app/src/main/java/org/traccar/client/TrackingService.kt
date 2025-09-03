@@ -33,6 +33,10 @@ import androidx.core.app.ServiceCompat
 import androidx.core.content.ContextCompat
 import androidx.preference.PreferenceManager
 import java.lang.RuntimeException
+import android.app.NotificationChannel
+import android.app.NotificationManager
+//import android.app.Notification
+import android.graphics.Color
 
 class TrackingService : Service() {
 
@@ -41,6 +45,26 @@ class TrackingService : Service() {
 
     @SuppressLint("WakelockTimeout")
     override fun onCreate() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            if (notificationManager.getNotificationChannel(MainApplication.PRIMARY_CHANNEL) == null) {
+                val channel = NotificationChannel(
+                    MainApplication.PRIMARY_CHANNEL,
+                    getString(R.string.channel_default), // Use your existing string resource
+                    NotificationManager.IMPORTANCE_LOW
+                ).apply {
+                    lightColor = Color.GREEN
+                    lockscreenVisibility = Notification.VISIBILITY_SECRET
+                    // You might want to add a description for better user understanding
+                    // description = "Description for Traccar background tracking"
+                }
+                notificationManager.createNotificationChannel(channel)
+                Log.d(TAG, "Notification Channel '${MainApplication.PRIMARY_CHANNEL}' created within TrackingService.")
+            } else {
+                Log.d(TAG, "Notification Channel '${MainApplication.PRIMARY_CHANNEL}' already exists.")
+            }
+        }
+
         val sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this)
         try {
             startForeground(NOTIFICATION_ID, createNotification(this))
