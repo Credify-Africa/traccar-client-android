@@ -15,6 +15,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
+import org.traccar.client.Constants
 import org.traccar.client.LoginActivity
 import org.traccar.client.R
 import org.traccar.client.ResetPasswordRequest
@@ -47,7 +48,7 @@ class PasswordSubmitActivity : AppCompatActivity() {
             .addInterceptor(logging)
             .build()
         val retrofit = Retrofit.Builder()
-            .baseUrl("https://api.credify.africa/")
+            .baseUrl(Constants.BASE_URL)
             .client(client)
             .addConverterFactory(GsonConverterFactory.create())
             .build()
