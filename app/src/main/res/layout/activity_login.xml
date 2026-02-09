@@ -61,24 +61,24 @@
                 android:textColor="#020202" />
         </com.google.android.material.textfield.TextInputLayout>
     </LinearLayout>
-    <com.google.android.material.textfield.TextInputLayout
-        android:id="@+id/password_layout"
-        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
-        android:hint="PIN"
-        android:textColorHint="#000000"
-        app:passwordToggleEnabled="true"
-        app:passwordToggleTint="#000000">
+<!--    <com.google.android.material.textfield.TextInputLayout-->
+<!--        android:id="@+id/password_layout"-->
+<!--        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"-->
+<!--        android:layout_width="match_parent"-->
+<!--        android:layout_height="wrap_content"-->
+<!--        android:layout_marginTop="16dp"-->
+<!--        android:hint="PIN"-->
+<!--        android:textColorHint="#000000"-->
+<!--        app:passwordToggleEnabled="true"-->
+<!--        app:passwordToggleTint="#000000">-->
 
-        <com.google.android.material.textfield.TextInputEditText
-            android:id="@+id/password"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:inputType="textPassword"
-            android:textColor="#020202" />
-    </com.google.android.material.textfield.TextInputLayout>
+<!--        <com.google.android.material.textfield.TextInputEditText-->
+<!--            android:id="@+id/password"-->
+<!--            android:layout_width="match_parent"-->
+<!--            android:layout_height="wrap_content"-->
+<!--            android:inputType="textPassword"-->
+<!--            android:textColor="#020202" />-->
+<!--    </com.google.android.material.textfield.TextInputLayout>-->
 
 
     <!--    <EditText-->
