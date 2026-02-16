@@ -2,9 +2,12 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:background="#FFFFFF"
     android:gravity="center"
     android:orientation="vertical"
+    android:id="@+id/root_layout"
+    android:focusable="true"
     android:padding="16dp">
 
     <ImageView
@@ -23,32 +26,98 @@
         android:textSize="20sp"
         android:textStyle="bold" />
 
-    <EditText
-        android:id="@+id/phone_number"
+
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="24dp"
-        android:background="@drawable/edittext_background"
-        android:hint="Phone Number"
-        android:inputType="phone"
-        android:padding="12dp"
-        android:textColor="@color/design_default_color_on_secondary"
-        android:textColorHint="#757575" />
+        android:layout_marginTop="16dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
+
+        <com.hbb20.CountryCodePicker
+            android:id="@+id/country_code_picker"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:ccp_defaultNameCode="UG"
+            app:ccp_showFlag="true"
+            app:ccp_showFullName="false"
+            app:ccp_showPhoneCode="true"
+            android:layout_marginEnd="8dp" />
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/phone_number_layout"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:hint="Phone Number"
+            android:textColorHint="#000000"
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/phone_number"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="phone"
+                android:textColor="#020202" />
+        </com.google.android.material.textfield.TextInputLayout>
+    </LinearLayout>
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/password_layout"
+        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:hint="PIN"
+        android:textColorHint="#000000"
+        app:passwordToggleEnabled="true"
+        app:passwordToggleTint="#000000">
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/password"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:inputType="textPassword"
+            android:textColor="#020202" />
+    </com.google.android.material.textfield.TextInputLayout>
+
 
     <!--    <EditText-->
-    <!--        android:id="@+id/password"-->
-    <!--        android:layout_width="match_parent"-->
-    <!--        android:layout_height="wrap_content"-->
-    <!--        android:hint="Password"-->
-    <!--        android:inputType="textPassword"-->
-    <!--        android:layout_marginTop="16dp"-->
-    <!--        android:textColorHint="#757575"-->
-    <!--        android:background="@drawable/edittext_background"-->
-    <!--        android:padding="12dp"-->
-    <!--        android:drawableEnd="@android:drawable/ic_menu_view"-->
-    <!--        android:drawablePadding="8dp" />-->
+<!--        android:id="@+id/phone_number"-->
+<!--        android:layout_width="match_parent"-->
+<!--        android:layout_height="wrap_content"-->
+<!--        android:layout_marginTop="24dp"-->
+<!--        android:background="@drawable/edittext_background"-->
+<!--        android:hint="Phone Number"-->
+<!--        android:inputType="phone"-->
+<!--        android:padding="12dp"-->
+<!--        android:textColor="@color/design_default_color_on_secondary"-->
+<!--        android:textColorHint="#757575" />-->
+
+<!--        <EditText-->
+<!--            android:id="@+id/password"-->
+<!--            android:layout_width="match_parent"-->
+<!--            android:layout_height="wrap_content"-->
+<!--            android:hint="Pin"-->
+<!--            android:inputType="numberPassword"-->
+<!--            android:layout_marginTop="16dp"-->
+<!--            android:textColorHint="#757575"-->
+<!--            android:background="@drawable/edittext_background"-->
+<!--            android:padding="12dp"-->
+<!--            android:drawableEnd="@android:drawable/ic_menu_view"-->
+<!--            android:drawablePadding="8dp" />-->
 
     <TextView
+        android:id="@+id/password_hint"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:layout_marginTop="8dp"
+        android:text="1234"
+        android:textColor="#F0266B0B"
+        android:visibility="gone" />
+
+    <TextView
+        android:id="@+id/forgot_password"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="end"
@@ -65,6 +134,16 @@
         android:padding="12dp"
         android:text="Log in"
         android:textColor="#FFFFFF" />
+
+    <ProgressBar
+        android:id="@+id/login_progress"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:visibility="gone"
+        app:layout_constraintTop_toTopOf="@id/login_button"
+        app:layout_constraintBottom_toBottomOf="@id/login_button"
+        app:layout_constraintStart_toStartOf="@id/login_button"
+        app:layout_constraintEnd_toEndOf="@id/login_button"/>
 
     <!--    <TextView-->
     <!--        android:layout_width="wrap_content"-->

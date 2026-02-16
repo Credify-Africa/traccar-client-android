@@ -25,9 +25,18 @@ import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.content.Context
+import android.content.SharedPreferences
 import android.provider.Settings
+import com.google.android.gms.maps.GoogleMap
+import com.google.android.gms.maps.OnMapReadyCallback
+import com.google.android.gms.maps.SupportMapFragment
+import com.google.android.gms.maps.model.LatLng
+import com.google.android.gms.maps.model.MarkerOptions
+import com.google.android.gms.location.FusedLocationProviderClient
+import com.google.android.gms.location.LocationServices
 
-class HistoryFragment : Fragment() {
+class HistoryFragment : Fragment(), OnMapReadyCallback {
+
 
     private var recyclerView: RecyclerView? = null
     private lateinit var adapter: SubmissionAdapter
@@ -35,6 +44,10 @@ class HistoryFragment : Fragment() {
 //    private val apiService = RetrofitClient.retrofit.create(SyncApiService::class.java)
     private lateinit var apiService: SyncApiService
     private var requestingPermissions: Boolean = false
+    private var googleMap: GoogleMap? = null // To hold the GoogleMap object
+    private lateinit var fusedLocationClient: FusedLocationProviderClient // For location updates
+    private lateinit var prefs: SharedPreferences
+
 //
 //    data class ShipmentTracking (
 //        val id :Int,
@@ -70,6 +83,15 @@ class HistoryFragment : Fragment() {
         dbHelper = DatabaseHelper(requireContext()) // Initialize after onAttach
         recyclerView = view.findViewById(R.id.submission_list)
 
+
+        fusedLocationClient = LocationServices.getFusedLocationProviderClient(requireActivity())
+        prefs = PreferenceManager.getDefaultSharedPreferences(requireContext())
+
+        // Initialize Map
+        val mapFragment = childFragmentManager.findFragmentById(R.id.map) as SupportMapFragment?
+        mapFragment?.getMapAsync(this)
+
+
         if (recyclerView != null) {
             recyclerView?.layoutManager = LinearLayoutManager(requireContext())
             adapter = SubmissionAdapter()
@@ -81,10 +103,17 @@ class HistoryFragment : Fragment() {
 //        Log.e("History", "${PreferenceManager.getDefaultSharedPreferences(requireContext())
 //            .getString(MainFragment.KEY_DEVICE, null)}")
 
-        val sharedPreferences = PreferenceManager.getDefaultSharedPreferences(requireContext())
-        if (!isServiceRunning(TrackingService::class.java)) {
-            startTrackingService(checkPermission = true)
-        }
+//        val sharedPreferences = PreferenceManager.getDefaultSharedPreferences(requireContext())
+//        val permissionAsked = sharedPreferences.getBoolean("location_permission_asked", false)
+
+//        startTrackingService(checkPermission = true)
+
+
+//        if (!isServiceRunning(TrackingService::class.java)) {
+//            startTrackingService(checkPermission = true)
+//        }
+
+
     }
 
     override fun onStart() {
@@ -92,6 +121,65 @@ class HistoryFragment : Fragment() {
         if (requestingPermissions) {
             requestingPermissions = BatteryOptimizationHelper().requestException(requireContext())
         }
+    }
+
+    override fun onResume() {
+        super.onResume()
+//        val prefs = PreferenceManager.getDefaultSharedPreferences(requireContext())
+//        val permissionAsked = prefs.getBoolean(KEY_PERMISSION_ASKED, false)
+
+        Log.d("HistoryFragment", "onResume called")
+//        if (!isServiceRunning(TrackingService::class.java) && !permissionAsked) {
+//            startTrackingService(checkPermission = true)
+//        }
+
+        val hasFineLocation = ContextCompat.checkSelfPermission(
+            requireContext(),
+            Manifest.permission.ACCESS_FINE_LOCATION
+        ) == PackageManager.PERMISSION_GRANTED
+
+        if (hasFineLocation) {
+            // On Android 10+ also check background location
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                val hasBackground = ContextCompat.checkSelfPermission(
+                    requireContext(),
+                    Manifest.permission.ACCESS_BACKGROUND_LOCATION
+                ) == PackageManager.PERMISSION_GRANTED
+
+                if (!hasBackground) {
+                    showBackgroundLocationRationaleDialog()
+                    return
+                }
+            }
+
+            // If we’re here, all permissions are fine → start service
+            if (!isServiceRunning(TrackingService::class.java)) {
+                startTrackingService()
+            }
+
+        } else {
+            // If denied before with "Don't ask again", shouldShowRequestPermissionRationale() returns false
+            if (!shouldShowRequestPermissionRationale(Manifest.permission.ACCESS_FINE_LOCATION)) {
+                showSettingsDialog()
+            } else {
+                // First time ask
+                requestPermissions(
+                    arrayOf(Manifest.permission.ACCESS_FINE_LOCATION),
+                    REQUEST_LOCATION_PERMISSION
+                )
+            }
+        }
+
+        googleMap?.let { map ->
+            if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+                if (!map.isMyLocationEnabled) { // Only set if not already enabled to avoid redundant calls
+                    map.isMyLocationEnabled = true
+                    getCurrentLocationAndAddMarker()
+                    Log.d("HistoryFragment", "Map MyLocation enabled and location refreshed in onResume.")
+                }
+            }
+        }
+
     }
 
     private fun isServiceRunning(serviceClass: Class<*>): Boolean {
@@ -104,45 +192,62 @@ class HistoryFragment : Fragment() {
         return false
     }
 
-    private fun startTrackingService(checkPermission: Boolean) {
-        val requiredPermissions = mutableSetOf<String>()
-        if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            requiredPermissions.add(Manifest.permission.ACCESS_FINE_LOCATION)
-        }
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q &&
-            ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_BACKGROUND_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            requiredPermissions.add(Manifest.permission.ACCESS_BACKGROUND_LOCATION)
-        }
-
-        if (requiredPermissions.isEmpty()) {
-            // Permissions granted, start the Service
-            ContextCompat.startForegroundService(requireContext(), Intent(requireContext(), TrackingService::class.java))
-            PreferenceManager.getDefaultSharedPreferences(requireContext())
-                .edit()
-                .putBoolean("status", true)
-                .apply()
-            Log.d("HistoryFragment", "TrackingService started")
-            // Request battery optimization exemption
-            requestingPermissions = BatteryOptimizationHelper().requestException(requireContext())
-        } else {
-            // Check if we should show rationale
-            val showRationale = requiredPermissions.any { permission ->
-                ActivityCompat.shouldShowRequestPermissionRationale(requireActivity(), permission)
-            }
-            Log.d("HistoryFragment", "Permissions needed: $requiredPermissions, showRationale: $showRationale")
-            if (showRationale) {
-                showPermissionRationaleDialog(requiredPermissions)
-            } else {
-                // Check if permanently denied
-                if (requiredPermissions.any { !ActivityCompat.shouldShowRequestPermissionRationale(requireActivity(), it) &&
-                            ContextCompat.checkSelfPermission(requireContext(), it) == PackageManager.PERMISSION_DENIED }) {
-                    showSettingsDialog()
-                } else {
-                    requestPermissions(requiredPermissions.toTypedArray(), PERMISSIONS_REQUEST_LOCATION)
-                }
-            }
-        }
+    private fun startTrackingService() {
+        val intent = Intent(requireContext(), TrackingService::class.java)
+        ContextCompat.startForegroundService(requireContext(), intent)
     }
+
+//    private fun startTrackingService(checkPermission: Boolean) {
+//        val prefs = PreferenceManager.getDefaultSharedPreferences(requireContext())
+//        val permissionAsked = prefs.getBoolean(KEY_PERMISSION_ASKED, false)
+//
+//        val requiredPermissions = mutableSetOf<String>()
+//        if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+//            requiredPermissions.add(Manifest.permission.ACCESS_FINE_LOCATION)
+//        }
+//        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q &&
+//            ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_BACKGROUND_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+//            requiredPermissions.add(Manifest.permission.ACCESS_BACKGROUND_LOCATION)
+//        }
+//
+//        if (requiredPermissions.isEmpty()) {
+//            // Permissions granted, start the Service
+//            ContextCompat.startForegroundService(requireContext(), Intent(requireContext(), TrackingService::class.java))
+//            PreferenceManager.getDefaultSharedPreferences(requireContext())
+//                .edit()
+//                .putBoolean("status", true)
+//                .apply()
+//            Log.d("HistoryFragment", "TrackingService started")
+//            // Request battery optimization exemption
+//            requestingPermissions = BatteryOptimizationHelper().requestException(requireContext())
+//            googleMap?.let { map ->
+//                if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+//                    map.isMyLocationEnabled = true
+//                    getCurrentLocationAndAddMarker() // Re-attempt to get and show location
+//                    Log.d("HistoryFragment", "Map MyLocation enabled and location refreshed after granting permissions.")
+//                }
+//            }
+//        } else {
+//            prefs.edit().putBoolean(KEY_PERMISSION_ASKED, true).apply()
+//
+//            // Check if we should show rationale
+//            val showRationale = requiredPermissions.any { permission ->
+//                ActivityCompat.shouldShowRequestPermissionRationale(requireActivity(), permission)
+//            }
+//            Log.d("HistoryFragment", "Permissions needed: $requiredPermissions, showRationale: $showRationale")
+//            if (showRationale) {
+//                showPermissionRationaleDialog(requiredPermissions)
+//            } else {
+//                // Check if permanently denied
+//                if (requiredPermissions.any { !ActivityCompat.shouldShowRequestPermissionRationale(requireActivity(), it) &&
+//                            ContextCompat.checkSelfPermission(requireContext(), it) == PackageManager.PERMISSION_DENIED }) {
+//                    showSettingsDialog()
+//                } else {
+//                    requestPermissions(requiredPermissions.toTypedArray(), PERMISSIONS_REQUEST_LOCATION)
+//                }
+//            }
+//        }
+//    }
 
     private fun showPermissionRationaleDialog(requiredPermissions: Set<String>) {
         AlertDialog.Builder(requireContext())
@@ -186,40 +291,56 @@ class HistoryFragment : Fragment() {
 
     override fun onRequestPermissionsResult(
         requestCode: Int,
-        permissions: Array<String>,
+        permissions: Array<out String>,
         grantResults: IntArray
     ) {
-        Log.d("HistoryFragment", "onRequestPermissionsResult: requestCode=$requestCode, permissions=${permissions.joinToString()}, results=${grantResults.joinToString()}")
-        if (requestCode == PERMISSIONS_REQUEST_LOCATION) {
-            val fineLocationGranted = permissions.indexOf(Manifest.permission.ACCESS_FINE_LOCATION).let { index ->
-                index != -1 && grantResults[index] == PackageManager.PERMISSION_GRANTED
-            }
-            val backgroundLocationGranted = permissions.indexOf(Manifest.permission.ACCESS_BACKGROUND_LOCATION).let { index ->
-                index == -1 || grantResults[index] == PackageManager.PERMISSION_GRANTED
-            }
-
-            if (fineLocationGranted) {
-                Log.d("HistoryFragment", "ACCESS_FINE_LOCATION granted, starting TrackingService")
-                startTrackingService(checkPermission = false)
-                if (!backgroundLocationGranted && Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                    Log.d("HistoryFragment", "ACCESS_BACKGROUND_LOCATION denied, showing rationale for background")
-                    showBackgroundLocationRationaleDialog()
-                }
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == REQUEST_LOCATION_PERMISSION) {
+            if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                prefs.edit().putBoolean(KEY_PERMISSION_ASKED, false).apply()
+                startTrackingService()
             } else {
-                Log.d("HistoryFragment", "Permissions denied: fineLocation=$fineLocationGranted, backgroundLocation=$backgroundLocationGranted")
-                Toast.makeText(requireContext(), "Permissions denied, tracking cannot start", Toast.LENGTH_SHORT).show()
-                PreferenceManager.getDefaultSharedPreferences(requireContext())
-                    .edit()
-                    .putBoolean("status", false)
-                    .apply()
-                // Check for permanently denied permissions
-                if (permissions.any { !ActivityCompat.shouldShowRequestPermissionRationale(requireActivity(), it) }) {
-                    Log.d("HistoryFragment", "Some permissions permanently denied, showing settings dialog")
-                    showSettingsDialog()
-                }
+                Toast.makeText(requireContext(), "Permission denied", Toast.LENGTH_SHORT).show()
             }
         }
     }
+
+//    override fun onRequestPermissionsResult(
+//        requestCode: Int,
+//        permissions: Array<String>,
+//        grantResults: IntArray
+//    ) {
+//        Log.d("HistoryFragment", "onRequestPermissionsResult: requestCode=$requestCode, permissions=${permissions.joinToString()}, results=${grantResults.joinToString()}")
+//        if (requestCode == PERMISSIONS_REQUEST_LOCATION) {
+//            val fineLocationGranted = permissions.indexOf(Manifest.permission.ACCESS_FINE_LOCATION).let { index ->
+//                index != -1 && grantResults[index] == PackageManager.PERMISSION_GRANTED
+//            }
+//            val backgroundLocationGranted = permissions.indexOf(Manifest.permission.ACCESS_BACKGROUND_LOCATION).let { index ->
+//                index == -1 || grantResults[index] == PackageManager.PERMISSION_GRANTED
+//            }
+//
+//            if (fineLocationGranted) {
+//                Log.d("HistoryFragment", "ACCESS_FINE_LOCATION granted, starting TrackingService")
+//                startTrackingService(checkPermission = false)
+//                if (!backgroundLocationGranted && Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+//                    Log.d("HistoryFragment", "ACCESS_BACKGROUND_LOCATION denied, showing rationale for background")
+//                    showBackgroundLocationRationaleDialog()
+//                }
+//            } else {
+//                Log.d("HistoryFragment", "Permissions denied: fineLocation=$fineLocationGranted, backgroundLocation=$backgroundLocationGranted")
+//                Toast.makeText(requireContext(), "Permissions denied, tracking cannot start", Toast.LENGTH_SHORT).show()
+//                PreferenceManager.getDefaultSharedPreferences(requireContext())
+//                    .edit()
+//                    .putBoolean("status", false)
+//                    .apply()
+//                // Check for permanently denied permissions
+//                if (permissions.any { !ActivityCompat.shouldShowRequestPermissionRationale(requireActivity(), it) }) {
+//                    Log.d("HistoryFragment", "Some permissions permanently denied, showing settings dialog")
+//                    showSettingsDialog()
+//                }
+//            }
+//        }
+//    }
 
     private fun showBackgroundLocationRationaleDialog() {
         AlertDialog.Builder(requireContext())
@@ -252,6 +373,15 @@ class HistoryFragment : Fragment() {
                 val token = rawToken?.substringAfter("Authorization=")?.substringBefore(";")?.trim()
 
                 Log.e("History", "Token: ${token}")
+
+                if (token == null) {
+                    Log.e("History", "Auth token is null, cannot fetch submissions.")
+                    Toast.makeText(requireContext(), "Session expired, please log in.", Toast.LENGTH_SHORT).show()
+                    startActivity(Intent(requireContext(), LoginActivity::class.java))
+                    requireActivity().finish()
+                    return@launch
+                }
+
 
                 apiService = RetrofitClient.getApiKeyClient(token.toString()).create(SyncApiService::class.java)
 
@@ -321,8 +451,10 @@ class HistoryFragment : Fragment() {
 
         override fun onBindViewHolder(holder: SubmissionViewHolder, position: Int) {
             val submission = submissions[position]
-            holder.containerId.text = submission.id.toString()
-            holder.comment.text = submission.deviceId
+            holder.containerId.text = "Conatiner No: ${submission.containerNo}"
+            holder.comment.text = "Device Id: ${submission.deviceId}"
+            holder.status.text = "Status: ${submission.status ?: "PENDING"}"
+            holder.name.text = "Driver: ${submission.firstName ?: "Paul"} ${submission.lastName ?: "Naftali"}"
 
             Log.d("History", "On  Bind ViewHolder: ${holder.containerId.text}, ${holder.comment.text}, ${submission}")
         }
@@ -332,9 +464,59 @@ class HistoryFragment : Fragment() {
         inner class SubmissionViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
             val containerId: TextView = itemView.findViewById(R.id.container_id)
             val comment: TextView = itemView.findViewById(R.id.comment)
+            val status : TextView = itemView.findViewById(R.id.status)
+            val name : TextView = itemView.findViewById(R.id.name)
         }
     }
+
+    override fun onMapReady(map: GoogleMap) {
+        googleMap = map
+        Log.d("HistoryFragment", "Google Map is ready")
+
+        // Enable zoom controls and my location button
+        googleMap?.uiSettings?.isZoomControlsEnabled = true
+        googleMap?.uiSettings?.isMyLocationButtonEnabled = true
+
+        // Check for location permissions before attempting to get location
+        if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+            googleMap?.isMyLocationEnabled = true // Show blue dot for current location
+            getCurrentLocationAndAddMarker()
+        } else {
+            Log.d("HistoryFragment", "Location permission not granted for map. Blue dot might not show.")
+        }
+    }
+
+    private fun getCurrentLocationAndAddMarker() {
+        if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+            fusedLocationClient.lastLocation
+                .addOnSuccessListener { location ->
+                    if (location != null) {
+                        val currentLatLng = LatLng(location.latitude, location.longitude)
+                        Log.d("HistoryFragment", "Current Location: ${location.latitude}, ${location.longitude}")
+                        googleMap?.apply {
+                            clear() // Clear existing markers
+                            addMarker(MarkerOptions().position(currentLatLng).title("Current Location"))
+                            moveCamera(com.google.android.gms.maps.CameraUpdateFactory.newLatLngZoom(currentLatLng, 15f)) // Zoom level 15
+                        }
+                    } else {
+                        Log.w("HistoryFragment", "Last known location is null.")
+                        Toast.makeText(requireContext(), "Could not get current location. Please ensure location services are enabled.", Toast.LENGTH_LONG).show()
+                    }
+                }
+                .addOnFailureListener { e ->
+                    Log.e("HistoryFragment", "Error getting last known location: ${e.message}", e)
+                    Toast.makeText(requireContext(), "Error getting location: ${e.message}", Toast.LENGTH_LONG).show()
+                }
+        } else {
+            Log.d("HistoryFragment", "Location permission not granted for getCurrentLocationAndAddMarker.")
+            // Permissions are requested by startTrackingService, so we don't re-request here.
+        }
+    }
+
     companion object {
         private const val PERMISSIONS_REQUEST_LOCATION = 2
+        private const val KEY_PERMISSION_ASKED = "location_permission_asked"
+        private const val KEY_TRACKING_RUNNING = "tracking_service_running"
+        private const val REQUEST_LOCATION_PERMISSION = 1001
     }
 }

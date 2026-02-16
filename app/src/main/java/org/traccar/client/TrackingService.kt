@@ -17,7 +17,6 @@ package org.traccar.client
 
 import android.Manifest
 import android.annotation.SuppressLint
-import android.app.ForegroundServiceStartNotAllowedException
 import android.app.Notification
 import android.app.PendingIntent
 import android.app.Service
@@ -34,6 +33,10 @@ import androidx.core.app.ServiceCompat
 import androidx.core.content.ContextCompat
 import androidx.preference.PreferenceManager
 import java.lang.RuntimeException
+import android.app.NotificationChannel
+import android.app.NotificationManager
+//import android.app.Notification
+import android.graphics.Color
 
 class TrackingService : Service() {
 
@@ -59,6 +62,7 @@ class TrackingService : Service() {
                 trackingController?.start()
             }
         } catch (e: RuntimeException) {
+            Log.e(TAG, "Error: ${e}")
             Log.w(TAG, e)
             sharedPreferences.edit().putBoolean(MainFragment.KEY_STATUS, false).apply()
             stopSelf()

@@ -4,9 +4,42 @@
     <color name="primary">#2e7d32</color>
     <color name="primary_dark">#005005</color>
     <color name="accent">#1a237e</color>
-    <color name="bottom_nav_item_color">#1E88E5</color>
-    <color name="colorPrimary">#1E88E5</color>
+<!--    <color name="bottom_nav_item_color">#1E88E5</color>-->
+<!--    <color name="colorPrimary">#1E88E5</color>-->
+<!--    <color name="colorPrimaryDark">#1565C0</color>-->
+<!--    <color name="colorAccent">#FF5722</color>-->
+
+    <color name="md_theme_primary">#1E88E5</color>
+    <color name="md_theme_primary_dark">#1565C0</color>
+    <color name="md_theme_onPrimary">#FFFFFF</color>
+    <color name="md_theme_primaryContainer">#BBDEFB</color>
+    <color name="md_theme_onPrimaryContainer">#0D47A1</color>
+
+    <color name="md_theme_secondary">#FF5722</color>
+    <color name="md_theme_secondary_dark">#D84315</color>
+    <color name="md_theme_onSecondary">#FFFFFF</color>
+    <color name="md_theme_secondaryContainer">#FFCCBC</color>
+    <color name="md_theme_onSecondaryContainer">#E64A19</color>
+
+    <color name="md_theme_tertiary">#D500F9</color>
+    <color name="md_theme_onTertiary">#FFFFFF</color>
+    <color name="md_theme_tertiaryContainer">#E1BEE7</color>
+    <color name="md_theme_onTertiaryContainer">#9C27B0</color>
+
+    <color name="md_theme_background">#FFFFFF</color>
+    <color name="md_theme_onBackground">#000000</color>
+    <color name="md_theme_surface">#FFFFFF</color>
+    <color name="md_theme_onSurface">#000000</color>
+    <color name="md_theme_surfaceVariant">#ECEFF1</color>
+    <color name="md_theme_onSurfaceVariant">#424242</color>
+    <color name="md_theme_error">#B00020</color>
+    <color name="md_theme_onError">#FFFFFF</color>
+
+    <color name="colorPrimary">@color/md_theme_primary</color>
     <color name="colorPrimaryDark">#1565C0</color>
-    <color name="colorAccent">#FF5722</color>
+    <color name="colorAccent">@color/md_theme_secondary</color>
+    <color name="bottom_nav_item_color">#1E88E5</color>
+
+    <color name="md_theme_outline">#757575</color>
 
 </resources>
